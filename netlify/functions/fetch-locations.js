@@ -2,7 +2,7 @@
 
 // 🚨 STEP 1: PASTE YOUR SECRET CSV URL HERE 
 // This file executes on the server and is never exposed to the user's browser.
-const SECRET_CSV_URL = 'PASTE_YOUR_FULL_GOOGLE_SHEET_CSV_EXPORT_URL_HERE'; 
+const SECRET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSOhcn-9Ugls8T6z7fVQC6zV6Oc6-TGweMm0uX2hvGyvr6VFPdyvfUUfOugiUmqAQDgf11V_jnMgggu/pub?gid=2093128535&single=true&output=csv'; 
 
 exports.handler = async (event, context) => {
     try {
