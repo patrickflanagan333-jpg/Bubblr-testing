@@ -223,7 +223,7 @@
         let communityLayer = null; // Layer for Community Data markers 
         let csvLayer = null; // Layer for CSV markers
         
-        // *** NEW *** - DEBOUNCE UTILITY FUNCTION
+        // *** PERFORMANCE FIX: DEBOUNCE UTILITY FUNCTION ***
         function debounce(func, wait) {
             let timeout;
             return function executedFunction(...args) {
@@ -235,7 +235,7 @@
                 timeout = setTimeout(later, wait);
             };
         };
-        // *** NEW *** - CACHING VARIABLE
+        // *** PERFORMANCE FIX: CACHING VARIABLE ***
         let lastQueriedBounds = null;
         
         // --- START UNIFIED ICON DEFINITION ---
@@ -491,7 +491,7 @@
          * @param {L.LatLngBounds} mapBounds - The current geographical bounds of the map view.
          */
         async function fetchCommunityFountains(mapBounds) {
-            // *** NEW *** - CACHING CHECK
+            // *** PERFORMANCE FIX: CACHING CHECK ***
             if (lastQueriedBounds && lastQueriedBounds.contains(mapBounds)) {
                 console.log("Map bounds contained in cached area. Skipping fetch.");
                 return; 
@@ -530,7 +530,7 @@
             } catch (error) {
                 console.error('Failed to fetch OpenStreetMap data via proxy:', error);
                 
-                // *** NEW *** - Reset bounds if fetch fails, allowing a retry on next move
+                // *** PERFORMANCE FIX: Reset bounds if fetch fails, allowing a retry on next move
                 lastQueriedBounds = null; 
             }
         }
@@ -672,7 +672,7 @@
             const initialBounds = map.getBounds();
             fetchCommunityFountains(initialBounds);
             
-            // *** NEW *** - DEBOUNCE THE moveend HANDLER
+            // *** PERFORMANCE FIX: DEBOUNCE THE moveend HANDLER ***
             const debouncedFetchFountains = debounce(function() {
                 const newBounds = map.getBounds();
                 fetchCommunityFountains(newBounds);
