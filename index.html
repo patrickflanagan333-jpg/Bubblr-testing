@@ -241,7 +241,7 @@
         // Global variables for map elements
         let userMarker = null;
         let userCircle = null;
-        let osmLayer = null; // Layer for OSM (Overpass) markers
+        let communityLayer = null; // Layer for Community Data markers 
         let csvLayer = null; // Layer for CSV markers
         
         // --- START UNIFIED ICON DEFINITION ---
@@ -306,11 +306,11 @@
         /**
          * Generates the HTML content for a marker popup.
          * @param {string} name - The name of the fountain.
-         * @param {string} source - The data source (e.g., 'Internal CSV' or 'OpenStreetMap').
+         * @param {string} source - The data source (e.g., 'Internal CSV' or 'Community Data').
          */
         function createBubblerPopup(name, source) {
-            // Determine status based on source (simple assumption for demo)
-            const status = source.includes('CSV') ? 'Filtered (Assumed)' : 'Public (OSM)';
+            // Determine status based on source
+            const status = source.includes('CSV') ? 'Filtered (Assumed)' : 'Public (Community)'; 
 
             return `
                 <div class="font-inter text-gray-800">
@@ -439,23 +439,23 @@
                 });
         }
         
-        // --- START NEW OVERPASS API FUNCTIONS ---
+        // --- START COMMUNITY DATA PROXY FUNCTIONS ---
 
         /**
-         * 2. Clears previous OSM markers and adds new markers from the fetched data.
-         * @param {Array<Object>} elements - Array of OSM elements (nodes) from the Overpass API response.
+         * 2. Clears previous community markers and adds new markers from the fetched data.
+         * @param {Array<Object>} elements - Array of O elements (nodes) from the API response.
          */
-        function displayOverpassMarkers(elements) {
+        function displayCommunityMarkers(elements) {
             const map = window.bubblrMap;
 
-            // Clear the previous OSM layer to avoid overlapping markers
-            if (osmLayer) {
-                map.removeLayer(osmLayer);
+            // Clear the previous community layer to avoid overlapping markers
+            if (communityLayer) { // <--- RENAMED HERE
+                map.removeLayer(communityLayer); // <--- RENAMED HERE
             }
             
             if (elements.length === 0) return;
 
-            // Convert the raw OSM data into a GeoJSON format for Leaflet
+            // Convert the raw Community data into a GeoJSON format for Leaflet
             const geoJsonFeatures = {
                 type: "FeatureCollection",
                 features: elements.map(el => ({
@@ -466,20 +466,20 @@
                     },
                     "properties": {
                         // Use tags for popup information
-                        "name": el.tags.name || "Public Fountain (OSM)",
+                        "name": el.tags.name || "Public Fountain (Community)", 
                         "access": el.tags.access || "yes"
                     }
                 }))
             };
 
             // Create a new Leaflet GeoJSON layer
-            osmLayer = L.geoJSON(geoJsonFeatures, {
+            communityLayer = L.geoJSON(geoJsonFeatures, { // <--- RENAMED HERE
                 pointToLayer: function (feature, latlng) {
                     // Use the unified bubblrIcon
                     return L.marker(latlng, { icon: bubblrIcon })
-                        .bindPopup(createBubblerPopup(feature.properties.name, "OpenStreetMap"));
+                        .bindPopup(createBubblerPopup(feature.properties.name, "Community Data")); 
                 }
-            }).addTo(map);
+            }).addTo(map); // <--- RENAMED HERE
             
             // Update the total location count to include both data sources
             // Safely parse current count, defaulting to 0 if an error/NaN is present
@@ -488,51 +488,46 @@
             const totalCount = csvCount + elements.length;
             document.getElementById('location-count').textContent = totalCount;
             
-            displayMessage(`Found ${elements.length} OSM locations.`, 1500);
+            displayMessage(`Found ${elements.length} community locations.`, 1500); 
         }
 
         /**
-         * 1. Fetches public drinking fountains from the Overpass API based on the map's current view.
+         * 1. Fetches public drinking fountains using the Netlify function proxy.
+         * The external Community API details are hidden on the server.
          * @param {L.LatLngBounds} mapBounds - The current geographical bounds of the map view.
          */
-        async function fetchOverpassFountains(mapBounds) {
+        async function fetchCommunityFountains(mapBounds) {
             // 1. Define the bounding box (bbox) coordinates
             const minLat = mapBounds.getSouth();
             const minLon = mapBounds.getWest();
             const maxLat = mapBounds.getNorth();
             const maxLon = mapBounds.getEast();
 
-            // 2. Construct the Overpass QL query
-            const query = `
-                [out:json][timeout:15];
-                // Query for nodes (points) with the drinking water tag within the current bounds
-                node[amenity=drinking_water](${minLat},${minLon},${maxLat},${maxLon});
-                out body;
-            `;
-
-            const url = 'https://overpass-api.de/api/interpreter';
+            // 2. The client now calls its own local Netlify endpoint
+            const url = '/.netlify/functions/fetch-all'; 
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
-                    // Send the query as the request body
-                    body: query
+                    headers: { 'Content-Type': 'application/json' },
+                    // 3. Send the boundaries as JSON to the server
+                    body: JSON.stringify({ minLat, minLon, maxLat, maxLon }) 
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Overpass API Error: ${response.statusText}`);
+                    throw new Error(`Proxy Error: ${response.statusText}`);
                 }
 
                 const data = await response.json();
                 
-                // 3. Process the fetched data
-                displayOverpassMarkers(data.elements);
+                // 4. Process the fetched data
+                displayCommunityMarkers(data.elements);
 
             } catch (error) {
-                console.error('Failed to fetch OpenStreetMap data:', error);
+                console.error('Failed to fetch OpenStreetMap data via proxy:', error);
             }
         }
-        // --- END NEW OVERPASS API FUNCTIONS ---
+        // --- END COMMUNITY DATA PROXY FUNCTIONS ---
         
         /**
          * Updates the Nearest Bubbler panel in the UI.
@@ -665,15 +660,15 @@
             // Load all locations from the external CSV URL (your internal data)
             loadBubblerLocations(map);
             
-            // --- NEW: INTEGRATE OVERPASS API ---
-            // Load initial OSM data for the default view
+            // --- INTEGRATE COMMUNITY DATA (NOW USING PROXY) ---
+            // Load initial community data for the default view
             const initialBounds = map.getBounds();
-            fetchOverpassFountains(initialBounds);
+            fetchCommunityFountains(initialBounds);
             
-            // Load new OSM data whenever the user moves or zooms the map
+            // Load new community data whenever the user moves or zooms the map
             map.on('moveend', function() {
                 const newBounds = map.getBounds();
-                fetchOverpassFountains(newBounds);
+                fetchCommunityFountains(newBounds);
             });
             // --- END NEW INTEGRATION ---
             
@@ -739,7 +734,7 @@
                     // 2. Define the data to be shared
                     const shareData = {
                         title: 'Bubblr: Find Water, Track Impact',
-                        text: 'Find free public water refill stations near you and track your plastic-saving impact with Bubblr',
+                        text: 'Find free public water refill stations near you and track your plastic-saving impact with the Bubblr web app!',
                         url: window.location.href // Shares the URL of the current page
                     };
 
