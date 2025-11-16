@@ -28,198 +28,236 @@
             padding: 0;
             
             /* KEY FIX: Use Dynamic Viewport Height (dvh) to account for mobile toolbars (Chrome/Safari) */
-            min-height: 100dvh; 
-            max-height: 100dvh;
-            width: 100%;
+            min-height: 100dvh;
+            width: 100vw;
+            height: 100dvh;
         }
 
-        /* The main app container on desktop (max-w-lg) */
         #app-container {
+            max-width: 420px;
+            /* Typical phone width */
             width: 100%;
-            height: 100%;
+            /* KEY FIX: Use Dynamic Viewport Height (dvh) */
+            height: 100dvh;
+            background-color: #ffffff;
+            /* Remove border-radius so it touches the screen edges */
+            border-radius: 0;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Prevent scrolling inside the container */
-            position: relative;
         }
-        
-        /* Main content area (where tabs live) */
-        .content-area {
-            flex-grow: 1; /* Allows content to take up remaining height */
-            overflow: hidden; /* Prevents body scrolling */
-            position: relative;
-            min-height: 0; /* 🛑 CRITICAL FIX 1: Ensures Flexbox correctly calculates remaining height */
-        }
-
         /* --- END OF MOBILE WHITESPACE FIXES --- */
 
-        /* --- CRITICAL LAYOUT FIX HERE --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 🛑 CRITICAL REVERSION FIX: Use this CSS for correct tab/map sizing */
         .tab-content {
             display: none;
-            width: 100%;
-            height: 100%;
-            /* REMOVED: position: absolute; top: 0; left: 0; */
+            flex-grow: 1; /* Allows tab content to fill the main height area */
+            overflow-y: auto;
         }
-
-        /* 🛑 CRITICAL FIX 2: Set the active tab to be a full-height Flex column container */
         .tab-content.active {
-            display: flex; 
-            flex-direction: column; 
-            min-height: 0; 
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Map specific styles */
+        /* Essential Leaflet Map styling */
         #map {
-            width: 100%;
-            /* Map is now a Flex child, taking up all available space by default. */
-            flex-grow: 1; 
+            height: 100%; /* Map must be 100% of its parent height for h-2/3 to work */
+            min-height: 250px; /* Ensure map is visible on small screens */
+            border-bottom: 8px solid #0d9488;
+            /* Match border-teal-500 */
         }
         
-        /* Custom User Location Marker (CSS for a nice blue dot) */
-        .custom-user-marker {
-            background-color: transparent !important;
+        /* Custom styling for the Bubbler markers (optional) */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+        }
+
+        /* Styling for the loading/modal message */
+        #location-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            font-weight: 600;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
 
-    <div id="app-container" class="max-w-lg bg-white shadow-xl">
-        
-        <header class="bg-teal-500 p-4 flex justify-between items-center shadow-lg">
-            <div class="flex items-center space-x-2">
-                <span data-lucide="droplet" class="text-white h-6 w-6"></span>
-                <h1 class="text-xl font-bold text-white">Bubblr</h1>
-            </div>
-            <button id="shareButton" class="text-white hover:text-teal-200 transition">
-                <span data-lucide="share-2" class="h-5 w-5"></span>
+    <div id="app-container">
+        <header class="p-4 flex justify-between items-center bg-teal-600 text-white shadow-lg">
+            <h1 class="text-2xl font-bold">💧 Bubblr</h1>
+            <button id="shareButton" class="p-2 rounded-full hover:bg-teal-700 transition" aria-label="Share">
+                <i data-lucide="share-2" class="w-5 h-5"></i>
             </button>
         </header>
 
-        <div class="content-area">
-
-            <div id="map-tab" class="tab-content active">
-                <div id="map"></div>
+    
+        <main class="flex-grow overflow-hidden relative">
+            
+            <div id="map-tab" class="tab-content active p-0 flex-col">
+                <div id="location-message" class="hidden">
+                    <p id="location-text">Locating you...</p>
+                </div>
+        
+                <div id="map" class="h-2/3">
+                </div>
                 
-                <div class="absolute top-4 left-4 right-4 z-[1000] space-y-2">
-                    
-                    <div class="bg-white p-3 rounded-lg shadow-md flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
-                            <span data-lucide="map-pin" class="h-5 w-5 text-teal-600"></span>
+                <div class="p-4 flex-grow">
+                    <div class="glass-card p-4">
+              
+                        <h2 class="text-lg font-semibold text-teal-700 mb-3 flex items-center">
+                             <i data-lucide="compass" class="w-5 h-5 mr-2"></i> Nearest Bubbler
+                        </h2>
+                        <div 
+class="flex justify-between items-center">
                             <div>
-                                <p class="text-xs font-medium text-gray-500">Nearest Bubbler</p>
-                                <p id="nearest-status" class="text-sm font-bold text-green-600">Loading Map...</p>
+                                <p class="text-2xl font-bold text-gray-800" id="nearest-distance">---</p>
+                                <p class="text-sm 
+text-gray-500">Distance</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-base font-medium text-green-600" id="nearest-status">Locating...</p>
+       
+                                <button class="mt-1 bg-teal-500 text-white text-sm font-semibold py-2 px-4 rounded-xl shadow-md hover:bg-teal-600 transition">
+                                    Get Directions
+                           
+                                </button>
                             </div>
                         </div>
-                        <div id="nearest-distance" class="text-xl font-extrabold text-teal-700">--</div>
-                    </div>
-                    
-                    <div class="bg-white p-3 rounded-lg shadow-md flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
-                            <span data-lucide="list-checks" class="h-5 w-5 text-teal-600"></span>
-                            <div>
-                                <p class="text-xs font-medium text-gray-500">Total Fountains Displayed</p>
-                            </div>
-                        </div>
-                        <div id="location-count" class="text-xl font-extrabold text-teal-700">0</div>
                     </div>
 
-                    <div id="location-message" class="hidden bg-yellow-400 text-yellow-900 text-sm font-semibold py-2 px-4 rounded-lg shadow-xl text-center">
-                        <span id="location-text"></span>
-                    </div>
-
-                </div>
-            </div>
-
-            <div id="impact-tab" class="tab-content p-4 overflow-y-auto">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">My Environmental Impact</h2>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    
-                    <div class="bg-teal-50 border-b-4 border-teal-600 p-4 rounded-lg shadow-md text-center">
-                        <span data-lucide="repeat" class="h-8 w-8 text-teal-600 mx-auto mb-2"></span>
-                        <p id="stat-bottles" class="text-3xl font-extrabold text-teal-800">0</p>
-                        <p class="text-sm font-medium text-gray-600 mt-1">Bottles Saved</p>
-                    </div>
-
-                    <div class="bg-teal-50 border-b-4 border-teal-600 p-4 rounded-lg shadow-md text-center">
-                        <span data-lucide="trash-2" class="h-8 w-8 text-teal-600 mx-auto mb-2"></span>
-                        <p id="stat-plastics" class="text-3xl font-extrabold text-teal-800">0.0g</p>
-                        <p class="text-sm font-medium text-gray-600 mt-1">Plastic Avoided</p>
-                    </div>
-
-                    <div class="bg-teal-50 border-b-4 border-teal-600 p-4 rounded-lg shadow-md text-center">
-                        <span data-lucide="dollar-sign" class="h-8 w-8 text-teal-600 mx-auto mb-2"></span>
-                        <p id="stat-money" class="text-3xl font-extrabold text-teal-800">$0</p>
-                        <p class="text-sm font-medium text-gray-600 mt-1">Money Saved</p>
-                    </div>
-
-                    <div class="bg-teal-50 border-b-4 border-teal-600 p-4 rounded-lg shadow-md text-center">
-                        <span data-lucide="cloud-off" class="h-8 w-8 text-teal-600 mx-auto mb-2"></span>
-                        <p id="stat-co2" class="text-3xl font-extrabold text-teal-800">0kg</p>
-                        <p class="text-sm font-medium text-gray-600 mt-1">CO2 Offset</p>
-                    </div>
-                </div>
-                
-                <div class="mt-6 p-4 bg-gray-100 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">How this works</h3>
-                    <p class="text-sm text-gray-600">Every time you click 'Check In & Refill' on a map marker, we assume you saved one single-use plastic bottle.</p>
-                    <ul class="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
-                        <li>**1 Bottle saved** ≈ 5g of plastic avoided.</li>
-                        <li>**1 Bottle saved** ≈ $2.00 in cost savings.</li>
-                        <li>**1 Bottle saved** ≈ 0.2kg of CO2 emissions offset.</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div id="about-tab" class="tab-content p-4 overflow-y-auto">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">About Bubblr</h2>
-                <div class="space-y-4 text-gray-700">
-                    <p>Bubblr is a progressive web application (PWA) designed to help you find public water refill stations (bubblers) and track your personal environmental impact from choosing reusables over single-use plastic.</p>
-                    
-                    <h3 class="text-xl font-semibold mt-6">Our Data Sources</h3>
-                    <p>We combine two layers of data to provide comprehensive coverage:</p>
-                    <ul class="list-disc list-inside space-y-1 ml-4 text-sm">
-                        <li>**Internal CSV Data:** Curated, filtered, and verified locations (e.g., from local government sheets).</li>
-                        <li>**Community Data:** Real-time data fetched from global, community-contributed locations. This layer is dynamically loaded as you move the map.</li>
-                    </ul>
-
-                    <h3 class="text-xl font-semibold mt-6">Technical Stack</h3>
-                    <p>This application is built entirely on modern web technologies:</p>
-                    <ul class="list-disc list-inside space-y-1 ml-4 text-sm">
-                        <li>**Frontend:** HTML, JavaScript, Leaflet.js (for maps), and Tailwind CSS.</li>
-                        <li>**Backend:** Serverless **Netlify Functions** written in JavaScript to securely proxy requests to external APIs, avoiding CORS issues and API key exposure.</li>
-                    </ul>
-                    
-                    <p class="pt-4 text-center text-xs text-gray-500">
-                        Built for sustainability. Version 1.2
+                    <p class="text-center text-xs 
+text-gray-400 mt-4">
+                        **No Login Required.** Showing <span id="location-count" class="font-bold">0</span> locations from internal data.
                     </p>
                 </div>
             </div>
+            <div id="impact-tab" class="tab-content p-4">
+                <h2 class="text-2xl font-extrabold text-teal-700 mb-4">Your Impact Score</h2>
+                
+                <div class="grid grid-cols-1 
+md:grid-cols-2 gap-4">
+                    
+                    <div class="glass-card p-5 bg-teal-50 shadow-xl">
+                        <div class="flex items-center mb-2">
+                            
+                            <i data-lucide="droplet" class="w-6 h-6 text-teal-500 mr-3"></i> 
+                            <h3 class="text-lg font-semibold text-gray-700">Bottles Saved</h3>
+                        </div>
+                        <p class="text-5xl font-extrabold text-teal-800" id="stat-bottles">0</p>
+          
+                        <p class="text-sm text-gray-500 mt-1">Refills tracked this month</p>
+                    </div>
 
-        </div> 
-        
-        <footer class="bg-white border-t border-gray-200 p-2 flex justify-around shadow-inner">
-            <button id="nav-map" class="nav-button flex flex-col items-center p-2 text-teal-600 font-semibold transition">
-                <span data-lucide="map" class="h-6 w-6"></span>
-                <span class="text-xs mt-1">Map</span>
+                    <div class="glass-card p-5 bg-pink-50 shadow-xl">
+                        <div class="flex items-center mb-2">
+         
+                            <i data-lucide="shield-check" class="w-6 h-6 text-pink-500 mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-700">Plastics Avoided</h3>
+                        </div>
+                    
+                        <p class="text-5xl font-extrabold text-pink-800" id="stat-plastics">0g</p>
+                        <p class="text-sm text-gray-500 mt-1">Equivalent to Microsplastics found in 3 fish</p>
+                    </div>
+
+                    <div class="glass-card p-5 bg-green-50 shadow-xl">
+               
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="dollar-sign" class="w-6 h-6 text-green-500 mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-700">Money Saved</h3>
+                       
+                        </div>
+                        <p class="text-5xl font-extrabold text-green-800" id="stat-money">$0</p>
+                        <p class="text-sm text-gray-500 mt-1">Based on average bottled water cost</p>
+                    </div>
+
+                   
+                    <div class="glass-card p-5 bg-gray-50 shadow-xl">
+                        <div class="flex items-center mb-2">
+                            <i data-lucide="cloud-off" class="w-6 h-6 text-gray-500 mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-700">CO₂ Offset</h3>
+  
+                        </div>
+                        <p class="text-5xl font-extrabold text-gray-800" id="stat-co2">0kg</p>
+                        <p class="text-sm text-gray-500 mt-1">Equivalent to a 400km car journey</p>
+                  
+                    </div>
+                </div>
+
+                 <p class="text-center text-xs text-gray-400 mt-6">
+                    Data driven by user refills and location checks.
+**Thank you!**
+                </p>
+            </div>
+
+            <div id="info-tab" class="tab-content p-4">
+                <h2 class="text-2xl font-extrabold text-teal-700 mb-4">About Bubblr</h2>
+                <div class="space-y-4">
+                  
+                    <p class="text-gray-700">
+                        **We can’t recycle our way out of this.** Bubblr is setting Australia on a path toward a microplastics-free future by removing single-use plastics from the supply chain.
+                    </p>
+                    <div class="glass-card p-4">
+                        <h3 class="font-semibold text-lg text-teal-600 flex items-center">
+                            <i data-lucide="zap" class="w-4 h-4 mr-2"></i> The Hidden Problem
+              
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">
+                            Did you know bottled water can contain up to **240,000 microscopic plastic particles** per litre?
+                        We show you the **health and financial cost** of choosing plastic over clean tap water.
+                        </p>
+                    </div>
+                    <p class="text-gray-700">
+                        Our business model focuses on a **data API subscription** for councils and businesses, using aggregated, anonymous consumer usage data to improve placemaking and sustainability efforts.
+                    </p>
+                    <a href="mailto:Patrick.flanagan333@gmail.com" class="mt-6 inline-flex justify-center items-center w-full text-center bg-teal-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-teal-700 transition">
+                        <i data-lucide="mail" class="w-5 h-5 mr-2"></i> Contact Us
+                    </a>
+              
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="flex justify-around items-center h-16 bg-white border-t border-gray-100 shadow-xl">
+            <button id="nav-map" class="nav-button text-teal-600 flex flex-col items-center p-1 font-semibold active">
+                <i data-lucide="map" class="w-6 h-6"></i>
+                <span class="text-xs">Map</span>
+     
             </button>
-            <button id="nav-impact" class="nav-button flex flex-col items-center p-2 text-gray-400 hover:text-teal-600 transition">
-                <span data-lucide="trending-up" class="h-6 w-6"></span>
-                <span class="text-xs mt-1">Impact</span>
+            <button id="nav-impact" class="nav-button text-gray-400 flex flex-col items-center p-1">
+                <i data-lucide="activity" class="w-6 h-6"></i>
+                <span class="text-xs">Impact</span>
             </button>
-            <button id="nav-about" class="nav-button flex flex-col items-center p-2 text-gray-400 hover:text-teal-600 transition">
-                <span data-lucide="info" class="h-6 w-6"></span>
-                <span class="text-xs mt-1">About</span>
+            <button id="nav-info" class="nav-button text-gray-400 flex flex-col items-center p-1">
+       
+                <i data-lucide="info" class="w-6 h-6"></i>
+                <span class="text-xs">About</span>
             </button>
         </footer>
 
-    </div> 
-    
+    </div>
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
-
         // Get all tabs and navigation buttons
         const tabs = document.querySelectorAll('.tab-content');
         const navButtons = document.querySelectorAll('.nav-button');
@@ -228,22 +266,8 @@
         let userMarker = null;
         let userCircle = null;
         let communityLayer = null; // Layer for Community Data markers 
-        let csvLayer = null; // Layer for CSV markers
-        
-        // *** PERFORMANCE FIX: DEBOUNCE UTILITY FUNCTION ***
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        };
-        // *** PERFORMANCE FIX: CACHING VARIABLE ***
-        let lastQueriedBounds = null;
+        let csvLayer = null;
+        // Layer for CSV markers
         
         // --- START UNIFIED ICON DEFINITION ---
         // 1. Define a single, reusable icon for all bubblers (Blue Marker)
@@ -251,6 +275,7 @@
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
             iconSize: [25, 41],
+   
             iconAnchor: [12, 41],
             popupAnchor: [1, -34],
             shadowSize: [41, 41]
@@ -264,16 +289,16 @@
             bottlesSaved: 0,
             plasticsAvoidedGrams: 0.0,
             moneySavedDollars: 0,
-            co2OffsetKg: 0 
+            co2OffsetKg: 
+            0 
         };
-
         // Configuration for Google Sheets Data
         const CSV_URL = '/.netlify/functions/fetch-locations';
         // --- END STATS AND DATA HANDLING ---
 
         /**
          * Updates the DOM elements with the current values from the global 'stats' object.
-         */
+        */
         function updateStatsDisplay() {
             document.getElementById('stat-bottles').textContent = stats.bottlesSaved;
             document.getElementById('stat-plastics').textContent = `${(stats.plasticsAvoidedGrams).toFixed(1)}g`;
@@ -283,41 +308,40 @@
 
         /**
          * Implements the "Check In" feature, incrementing all statistics.
-         * This function is called from the marker popup button.
-         */
+        * This function is called from the marker popup button.
+        */
         function checkIn() {
             // Increment base stat (Bottles Saved)
             stats.bottlesSaved += 1;
-            
             // Update dependent stats (Refill Multipliers: 5g plastic, $2.00, 0.2kg CO2)
-            stats.plasticsAvoidedGrams += 5; 
+            stats.plasticsAvoidedGrams += 5;
             stats.moneySavedDollars += 2; 
             stats.co2OffsetKg += 0.2; 
             
             // Update the UI
             updateStatsDisplay();
-            
             // Give user feedback
             displayMessage("Checked in! Your Impact Score was updated.", 1500);
-            
             // Switch to the Impact tab to show the change
-            switchTab('impact-tab'); 
+            switchTab('impact-tab');
         }
 
         /**
          * Generates the HTML content for a marker popup.
-         * @param {string} name - The name of the fountain.
-         * @param {string} source - The data source (e.g., 'Internal CSV' or 'Community Data').
-         */
+        * @param {string} name - The name of the fountain.
+        * @param {string} source - The data source (e.g., 'Internal CSV' or 'Community Data').
+        */
         function createBubblerPopup(name, source) {
             // Determine status based on source
-            const status = source.includes('CSV') ? 'Filtered (Assumed)' : 'Public (Community)'; 
+            const status = source.includes('CSV') ?
+            'Filtered (Assumed)' : 'Public (Community)'; 
 
             return `
                 <div class="font-inter text-gray-800">
                     <b class="text-teal-600">${name}</b>
                     <p class="text-sm mt-1">Source: ${source}</p>
                     <p class="text-sm">Status: ${status}</p>
+          
                     <button class="mt-2 bg-teal-500 text-white text-xs font-semibold py-1 px-2 rounded-lg shadow-md hover:bg-teal-600 transition" onclick="checkIn()">
                         Check In & Refill
                     </button>
@@ -327,7 +351,7 @@
 
         /**
          * Parses a CSV line while respecting commas inside double quotes.
-         */
+        */
         function parseCsvLine(line) {
             // Regex to split by comma, only if it's NOT inside double quotes.
             const re = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
@@ -338,18 +362,20 @@
          * Parses the CSV string and loads bubbler locations onto the map using individual markers.
          * @param {L.Map} map - The Leaflet map instance.
          * @param {string} csvString - The raw CSV text content fetched from the URL.
-         */
+   
+        */
         function parseCSVAndDisplayMarkers(map, csvString) {
             const lines = csvString.trim().split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) return;
 
             // Use the robust parser for the header line and normalize to find indices
             const rawHeaders = parseCsvLine(lines[0]);
+        
             const normalizedHeaders = rawHeaders.map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
             
             // Flexible header finding
             const nameIndex = normalizedHeaders.findIndex(h => h.includes('name')); 
-            const latIndex = normalizedHeaders.findIndex(h => h.includes('lat')); 
+            const latIndex = normalizedHeaders.findIndex(h => h.includes('lat'));
             const lngIndex = normalizedHeaders.findIndex(h => h.includes('long')); 
             
             if (nameIndex === -1 || latIndex === -1 || lngIndex === -1) {
@@ -372,20 +398,17 @@
                 
                 // Use the robust parser for data rows
                 const values = parseCsvLine(lines[i]);
-                
                 if (values.length < Math.max(nameIndex, latIndex, lngIndex) + 1) {
-                    continue; 
+                    continue;
                 }
                 
                 const lat = parseFloat(values[latIndex]);
                 const lng = parseFloat(values[lngIndex]);
                 const name = values[nameIndex] ? values[nameIndex].trim() : `Bubbler ${i}`;
-                
                 if (!isNaN(lat) && !isNaN(lng) && name) {
                     // Create a marker and add it to the temporary array (using the unified icon)
                     const marker = L.marker([lat, lng], {icon: bubblrIcon})
                         .bindPopup(createBubblerPopup(name, "Internal CSV Data"));
-                    
                     csvMarkers.push(marker);
                     
                     if (locationCount === 0) {
@@ -398,10 +421,8 @@
 
             // Add all CSV markers as a single layer
             csvLayer = L.layerGroup(csvMarkers).addTo(map);
-
             // Update the map status count (only the CSV count initially)
             document.getElementById('location-count').textContent = locationCount;
-
             // Update the nearest bubbler placeholder with the first location found
             if (firstLocation) {
                 updateNearestBubbler(firstLocation.name, firstLocation.distance, firstLocation.status);
@@ -410,29 +431,32 @@
         
         /**
          * Fetches the CSV data from the Google Sheets URL and initiates marker display.
-         * @param {L.Map} map - The Leaflet map instance.
+        * @param {L.Map} map - The Leaflet map instance.
          */
         function loadBubblerLocations(map) {
-            displayMessage("Fetching Bubblr locations...", 5000); // Inform the user that data is loading
+            displayMessage("Fetching Bubblr locations...", 5000);
+            // Inform the user that data is loading
 
             fetch(CSV_URL)
                 .then(response => {
                     if (!response.ok) {
                         // Throw an error if the HTTP status is not 2xx
+       
                         throw new Error(`HTTP error! Status: ${response.status}. This may happen if the sheet is not publicly accessible.`);
                     }
                     return response.text();
                 })
+           
                 .then(csvString => {
                     // Once data is retrieved, parse it and display markers
                     parseCSVAndDisplayMarkers(map, csvString);
                     displayMessage("Internal locations loaded.", 1500);
                 })
+    
                 .catch(error => {
                     console.error('Data Loading Error:', error);
                     displayMessage("Failed to load internal locations. Check Console (F12) for details.", 5000);
                     document.getElementById('location-count').textContent = 'Error';
-                    
                     const nearestStatus = document.getElementById('nearest-status');
                     nearestStatus.classList.remove('text-green-600');
                     nearestStatus.classList.add('text-red-500');
@@ -444,40 +468,41 @@
 
         /**
          * 2. Clears previous community markers and adds new markers from the fetched data.
-         * @param {Array<Object>} elements - Array of O elements (nodes) from the API response.
-         */
+        * @param {Array<Object>} elements - Array of O elements (nodes) from the API response.
+        */
         function displayCommunityMarkers(elements) {
             const map = window.bubblrMap;
-
             // Clear the previous community layer to avoid overlapping markers
-            if (communityLayer) {
+            if (communityLayer) { 
                 map.removeLayer(communityLayer);
             }
             
             if (elements.length === 0) return;
-
             // Convert the raw Community data into a GeoJSON format for Leaflet
             const geoJsonFeatures = {
                 type: "FeatureCollection",
                 features: elements.map(el => ({
                     "type": "Feature",
+                 
                     "geometry": {
                         "type": "Point",
                         "coordinates": [el.lon, el.lat] 
                     },
                     "properties": {
+   
                         // Use tags for popup information
                         "name": el.tags.name || "Public Fountain (Community)", 
                         "access": el.tags.access || "yes"
+                 
                     }
                 }))
             };
-
             // Create a new Leaflet GeoJSON layer
-            communityLayer = L.geoJSON(geoJsonFeatures, {
+            communityLayer = L.geoJSON(geoJsonFeatures, { 
                 pointToLayer: function (feature, latlng) {
                     // Use the unified bubblrIcon
                     return L.marker(latlng, { icon: bubblrIcon })
+      
                         .bindPopup(createBubblerPopup(feature.properties.name, "Community Data")); 
                 }
             }).addTo(map);
@@ -489,63 +514,46 @@
             const totalCount = csvCount + elements.length;
             document.getElementById('location-count').textContent = totalCount;
             
-            displayMessage(`Found ${elements.length} community locations.`, 1500); 
+            displayMessage(`Found ${elements.length} community locations.`, 1500);
         }
 
         /**
          * 1. Fetches public drinking fountains using the Netlify function proxy.
-         * The external Community API details are hidden on the server.
-         * @param {L.LatLngBounds} mapBounds - The current geographical bounds of the map view.
-         */
+        * The external Community API details are hidden on the server.
+        * @param {L.LatLngBounds} mapBounds - The current geographical bounds of the map view.
+        */
         async function fetchCommunityFountains(mapBounds) {
-            // *** PERFORMANCE FIX: CACHING CHECK ***
-            if (lastQueriedBounds && lastQueriedBounds.contains(mapBounds)) {
-                console.log("Map bounds contained in cached area. Skipping fetch.");
-                return; 
-            }
-            
-            // Update the last queried bounds for the next check, expanding by 20%
-            lastQueriedBounds = mapBounds.pad(0.2); 
-            // *** END CACHING CHECK ***
-
             // 1. Define the bounding box (bbox) coordinates
             const minLat = mapBounds.getSouth();
             const minLon = mapBounds.getWest();
             const maxLat = mapBounds.getNorth();
             const maxLon = mapBounds.getEast();
-
             // 2. The client now calls its own local Netlify endpoint
-            const url = '/.netlify/functions/fetch-all'; 
-
+            const url = '/.netlify/functions/fetch-all';
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     // 3. Send the boundaries as JSON to the server
+    
                     body: JSON.stringify({ minLat, minLon, maxLat, maxLon }) 
                 });
-
                 if (!response.ok) {
                     throw new Error(`Proxy Error: ${response.statusText}`);
                 }
 
                 const data = await response.json();
-                
                 // 4. Process the fetched data
                 displayCommunityMarkers(data.elements);
-
             } catch (error) {
-                console.error('Failed to fetch Community data via proxy:', error);
-                
-                // *** PERFORMANCE FIX: Reset bounds if fetch fails, allowing a retry on next move
-                lastQueriedBounds = null; 
+                console.error('Failed to fetch OpenStreetMap data via proxy:', error);
             }
         }
         // --- END COMMUNITY DATA PROXY FUNCTIONS ---
         
         /**
          * Updates the Nearest Bubbler panel in the UI.
-         */
+        */
         function updateNearestBubbler(name, distance, status) {
             document.getElementById('nearest-distance').textContent = distance;
             document.getElementById('nearest-status').textContent = `${name}`;
@@ -553,7 +561,7 @@
 
         /**
          * Displays a temporary message on the map screen.
-         */
+        */
         function displayMessage(text, duration = 2000) {
             const msgDiv = document.getElementById('location-message');
             document.getElementById('location-text').textContent = text;
@@ -565,11 +573,10 @@
         
         /**
          * Handles successful geolocation lookup.
-         * @param {object} e - The location event object from Leaflet.
-         */
+        * @param {object} e - The location event object from Leaflet.
+        */
         function onLocationFound(e) {
             const map = window.bubblrMap;
-
             // Clear previous location visual elements
             if (userMarker) map.removeLayer(userMarker);
             if (userCircle) map.removeLayer(userCircle);
@@ -582,37 +589,34 @@
                 fillColor: '#304FFE',
                 fillOpacity: 0.15,
                 weight: 2,
+       
                 radius: radius
             }).addTo(map);
-
             // Custom blue dot icon
             const userIcon = L.divIcon({
                 className: 'custom-user-marker',
                 html: '<div style="background-color: #304FFE; width: 15px; height: 15px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
                 iconSize: [15, 15],
+            
                 iconAnchor: [7.5, 7.5]
             });
-            
             // Add marker
             userMarker = L.marker(e.latlng, {icon: userIcon})
                 .addTo(map)
                 .bindPopup("<b>You are here!</b><br>Accuracy: " + Math.round(radius) + " meters.")
                 .openPopup();
-
             // Set the map zoom to 16 for a 5-minute walking distance view
-            map.setView(e.latlng, 16); 
-
+            map.setView(e.latlng, 16);
             displayMessage("Location found! Centering map.", 1500);
             updateNearestBubbler('Searching for closest...', '0 m', 'Ready');
         }
 
         /**
          * Handles geolocation errors.
-         * @param {object} e - The error event object from Leaflet.
-         */
+        * @param {object} e - The error event object from Leaflet.
+        */
         function onLocationError(e) {
             console.error("Geolocation Error:", e.message);
-            
             // --- LOCATION ERROR HANDLER FIX: Provides explicit instructions to user ---
             let errorMessage = "Couldn't find location. Showing default area.";
             if (e.code === 1) { // PERMISSION_DENIED (User or browser settings blocked it)
@@ -624,7 +628,7 @@
             }
 
             // Display a longer-lasting message with the specific instruction
-            displayMessage(errorMessage, 6000); 
+            displayMessage(errorMessage, 6000);
             // --------------------------------------------------------------------------
             
             const nearestStatus = document.getElementById('nearest-status');
@@ -635,7 +639,7 @@
         
         /**
          * Initializes the Leaflet map and attempts to locate the user.
-         */
+        */
         function initializeMap() {
             // Default coordinates centered near the provided location data (Sydney)
             const initialLat = -33.885;
@@ -653,12 +657,11 @@
             const map = L.map('map').setView([initialLat, initialLng], initialZoom);
             window.bubblrMap = map;
 
-            // Add Map tiles
+            // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
                 maxZoom: 19
             }).addTo(map);
-
             // Set up location event handlers
             map.on('locationfound', onLocationFound);
             map.on('locationerror', onLocationError);
@@ -669,24 +672,21 @@
                 setView: false, 
                 maxZoom: 16, 
                 enableHighAccuracy: true
+          
             });
 
             // Load all locations from the external CSV URL (your internal data)
             loadBubblerLocations(map);
-            
             // --- INTEGRATE COMMUNITY DATA (NOW USING PROXY) ---
             // Load initial community data for the default view
             const initialBounds = map.getBounds();
             fetchCommunityFountains(initialBounds);
             
-            // *** PERFORMANCE FIX: DEBOUNCE THE moveend HANDLER ***
-            const debouncedFetchFountains = debounce(function() {
+            // Load new community data whenever the user moves or zooms the map
+            map.on('moveend', function() {
                 const newBounds = map.getBounds();
                 fetchCommunityFountains(newBounds);
-            }, 500); // Wait 500ms (0.5s) before fetching new data
-
-            // Load new community data whenever the user moves or zooms the map
-            map.on('moveend', debouncedFetchFountains);
+            });
             // --- END NEW INTEGRATION ---
             
             // Initial stats display on load
@@ -695,14 +695,13 @@
         
         /**
          * Switches the active tab view.
-         * @param {string} targetId - The ID of the tab content to show (e.g., 'map-tab').
-         */
+        * @param {string} targetId - The ID of the tab content to show (e.g., 'map-tab').
+        */
         function switchTab(targetId) {
             // Hide all tab content
             tabs.forEach(tab => {
                 tab.classList.remove('active');
             });
-
             // Show the target tab content
             const targetTab = document.getElementById(targetId);
             if (targetTab) {
@@ -721,11 +720,13 @@
                 const associatedTabId = buttonId.replace('nav-', '') + '-tab';
 
                 if (associatedTabId === targetId) {
+         
                     button.classList.add('text-teal-600', 'font-semibold');
                     button.classList.remove('text-gray-400');
                 } else {
                     button.classList.add('text-gray-400');
                     button.classList.remove('text-teal-600', 'font-semibold');
+         
                 }
             });
         }
@@ -737,24 +738,24 @@
                 switchTab(targetTabId);
             });
         });
-        
         const shareButton = document.getElementById('shareButton');
 
         /**
          * Handles the click event for the share button.
-         * Uses the Web Share API to trigger the native share dialogue.
-         */
+        * Uses the Web Share API to trigger the native share dialogue.
+        */
         async function handleShare() {
             // 1. Check if the Web Share API is supported
             if (navigator.share) {
                 try {
                     // 2. Define the data to be shared
+          
                     const shareData = {
                         title: 'Bubblr: Find Water, Track Impact',
                         text: 'Find free public water refill stations near you and track your plastic-saving impact with the Bubblr web app!',
+                
                         url: window.location.href // Shares the URL of the current page
                     };
-
                     // 3. Call the native share dialog
                     await navigator.share(shareData);
                     console.log('Bubblr was shared successfully.');
@@ -763,7 +764,6 @@
                     // User cancelled the share or an error occurred
                     if (error.name !== 'AbortError') {
                         console.error('Error sharing:', error);
-                        
                     }
                 }
             } else {
@@ -786,7 +786,6 @@
 
         // Ensure the initial tab is set (Map tab by default) and initialize the map on load
         switchTab('map-tab');
-
     </script>
 
 </body>
