@@ -48,7 +48,7 @@
             flex-grow: 1; /* Allows content to take up remaining height */
             overflow: hidden; /* Prevents body scrolling */
             position: relative;
-            min-height: 0; /* 🛑 CRITICAL FLEXBOX FIX: Prevents content from overflowing and forces flex-grow to work */
+            min-height: 0; /* 🛑 CRITICAL FIX 1: Ensures Flexbox correctly calculates remaining height */
         }
 
         /* --- END OF MOBILE WHITESPACE FIXES --- */
@@ -58,17 +58,21 @@
             display: none;
             width: 100%;
             height: 100%;
-            /* Removed previous position: absolute; */
+            /* REMOVED: position: absolute; top: 0; left: 0; */
         }
 
+        /* 🛑 CRITICAL FIX 2: Set the active tab to be a full-height Flex column container */
         .tab-content.active {
-            display: block;
+            display: flex; 
+            flex-direction: column; 
+            min-height: 0; 
         }
 
         /* Map specific styles */
         #map {
             width: 100%;
-            height: 100%;
+            /* Map is now a Flex child, taking up all available space by default. */
+            flex-grow: 1; 
         }
         
         /* Custom User Location Marker (CSS for a nice blue dot) */
@@ -192,7 +196,9 @@
                 </div>
             </div>
 
-        </div> <footer class="bg-white border-t border-gray-200 p-2 flex justify-around shadow-inner">
+        </div> 
+        
+        <footer class="bg-white border-t border-gray-200 p-2 flex justify-around shadow-inner">
             <button id="nav-map" class="nav-button flex flex-col items-center p-2 text-teal-600 font-semibold transition">
                 <span data-lucide="map" class="h-6 w-6"></span>
                 <span class="text-xs mt-1">Map</span>
@@ -207,7 +213,9 @@
             </button>
         </footer>
 
-    </div> <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    </div> 
+    
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
@@ -406,8 +414,6 @@
          */
         function loadBubblerLocations(map) {
             displayMessage("Fetching Bubblr locations...", 5000); // Inform the user that data is loading
-
-            const CSV_URL = '/.netlify/functions/fetch-locations'; // Defined locally, but using function endpoint
 
             fetch(CSV_URL)
                 .then(response => {
@@ -679,4 +685,109 @@
                 fetchCommunityFountains(newBounds);
             }, 500); // Wait 500ms (0.5s) before fetching new data
 
-            // Load new community data whenever the user moves or zooms the
+            // Load new community data whenever the user moves or zooms the map
+            map.on('moveend', debouncedFetchFountains);
+            // --- END NEW INTEGRATION ---
+            
+            // Initial stats display on load
+            updateStatsDisplay();
+        }
+        
+        /**
+         * Switches the active tab view.
+         * @param {string} targetId - The ID of the tab content to show (e.g., 'map-tab').
+         */
+        function switchTab(targetId) {
+            // Hide all tab content
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show the target tab content
+            const targetTab = document.getElementById(targetId);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
+            // Initialize map when 'map-tab' is activated
+            if (targetId === 'map-tab') {
+                // Use a short timeout to ensure the map container has rendered before initializing Leaflet
+                setTimeout(initializeMap, 10);
+            }
+
+            // Update navigation button styles
+            navButtons.forEach(button => {
+                const buttonId = button.id;
+                const associatedTabId = buttonId.replace('nav-', '') + '-tab';
+
+                if (associatedTabId === targetId) {
+                    button.classList.add('text-teal-600', 'font-semibold');
+                    button.classList.remove('text-gray-400');
+                } else {
+                    button.classList.add('text-gray-400');
+                    button.classList.remove('text-teal-600', 'font-semibold');
+                }
+            });
+        }
+
+        // Add event listeners to navigation buttons
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTabId = button.id.replace('nav-', '') + '-tab';
+                switchTab(targetTabId);
+            });
+        });
+        
+        const shareButton = document.getElementById('shareButton');
+
+        /**
+         * Handles the click event for the share button.
+         * Uses the Web Share API to trigger the native share dialogue.
+         */
+        async function handleShare() {
+            // 1. Check if the Web Share API is supported
+            if (navigator.share) {
+                try {
+                    // 2. Define the data to be shared
+                    const shareData = {
+                        title: 'Bubblr: Find Water, Track Impact',
+                        text: 'Find free public water refill stations near you and track your plastic-saving impact with the Bubblr web app!',
+                        url: window.location.href // Shares the URL of the current page
+                    };
+
+                    // 3. Call the native share dialog
+                    await navigator.share(shareData);
+                    console.log('Bubblr was shared successfully.');
+                    
+                } catch (error) {
+                    // User cancelled the share or an error occurred
+                    if (error.name !== 'AbortError') {
+                        console.error('Error sharing:', error);
+                        
+                    }
+                }
+            } else {
+                // Fallback for browsers that don't support the API (e.g., some desktops)
+                // A common fallback is to copy the URL to the clipboard.
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    displayMessage("Link copied to clipboard!", 2000);
+                } catch (err) {
+                    console.error('Fallback sharing failed:', err);
+                    displayMessage("Sharing not supported.", 2000);
+                }
+            }
+        }
+
+        // 4. Attach the event listener to the button
+        if (shareButton) {
+            shareButton.addEventListener('click', handleShare);
+        }
+
+        // Ensure the initial tab is set (Map tab by default) and initialize the map on load
+        switchTab('map-tab');
+
+    </script>
+
+</body>
+</html>
