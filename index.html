@@ -231,6 +231,24 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
+        // --- NEW DEBOUNCE UTILITY FUNCTION ---
+        /**
+         * Returns a function that delays invoking func until after wait milliseconds 
+         * have elapsed since the last time the debounced function was invoked.
+         */
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        };
+        // -------------------------------------
+        
         // Initialize Lucide icons
         lucide.createIcons();
 
@@ -243,6 +261,10 @@
         let userCircle = null;
         let communityLayer = null; // Layer for Community Data markers 
         let csvLayer = null; // Layer for CSV markers
+        
+        // --- NEW CACHING VARIABLE ---
+        let lastQueriedBounds = null;
+        // ----------------------------
         
         // --- START UNIFIED ICON DEFINITION ---
         // 1. Define a single, reusable icon for all bubblers (Blue Marker)
@@ -497,6 +519,22 @@
          * @param {L.LatLngBounds} mapBounds - The current geographical bounds of the map view.
          */
         async function fetchCommunityFountains(mapBounds) {
+            
+            // ------------------------------------------------
+            // --- Caching Check for Performance Improvement ---
+            // ------------------------------------------------
+            if (lastQueriedBounds && lastQueriedBounds.contains(mapBounds)) {
+                // If the current map view is entirely contained within the last queried bounds, 
+                // we can skip the fetch.
+                console.log("Map bounds contained in cached area. Skipping fetch.");
+                return; 
+            }
+            
+            // Update the last queried bounds for the next check.
+            // .pad(0.2) expands the box by 20% on all sides to create a larger cache area.
+            lastQueriedBounds = mapBounds.pad(0.2); 
+            // ------------------------------------------------
+
             // 1. Define the bounding box (bbox) coordinates
             const minLat = mapBounds.getSouth();
             const minLon = mapBounds.getWest();
@@ -665,11 +703,14 @@
             const initialBounds = map.getBounds();
             fetchCommunityFountains(initialBounds);
             
-            // Load new community data whenever the user moves or zooms the map
-            map.on('moveend', function() {
+            // --- NEW: Debounce map moveend event to prevent excessive API calls ---
+            const debouncedFetchFountains = debounce(function() {
                 const newBounds = map.getBounds();
                 fetchCommunityFountains(newBounds);
-            });
+            }, 500); // Wait 500ms before fetching new data
+
+            // Load new community data whenever the user moves or zooms the map
+            map.on('moveend', debouncedFetchFountains);
             // --- END NEW INTEGRATION ---
             
             // Initial stats display on load
