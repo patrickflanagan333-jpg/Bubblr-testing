@@ -238,10 +238,25 @@
         const tabs = document.querySelectorAll('.tab-content');
         const navButtons = document.querySelectorAll('.nav-button');
 
-        // Global variables
+        // Global variables for map elements
         let userMarker = null;
         let userCircle = null;
+        let osmLayer = null; // Layer for OSM (Overpass) markers
+        let csvLayer = null; // Layer for CSV markers
         
+        // --- START UNIFIED ICON DEFINITION ---
+        // 1. Define a single, reusable icon for all bubblers (Blue Marker)
+        const bubblrIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        // --- END UNIFIED ICON DEFINITION ---
+
+
         // --- START STATS AND DATA HANDLING ---
         // Global stats initialized with starting values (matching HTML)
         let stats = {
@@ -266,7 +281,7 @@
         }
 
         /**
-         * FIX: Implements the "Check In" feature, incrementing all statistics.
+         * Implements the "Check In" feature, incrementing all statistics.
          * This function is called from the marker popup button.
          */
         function checkIn() {
@@ -286,6 +301,27 @@
             
             // Switch to the Impact tab to show the change
             switchTab('impact-tab'); 
+        }
+
+        /**
+         * Generates the HTML content for a marker popup.
+         * @param {string} name - The name of the fountain.
+         * @param {string} source - The data source (e.g., 'Internal CSV' or 'OpenStreetMap').
+         */
+        function createBubblerPopup(name, source) {
+            // Determine status based on source (simple assumption for demo)
+            const status = source.includes('CSV') ? 'Filtered (Assumed)' : 'Public (OSM)';
+
+            return `
+                <div class="font-inter text-gray-800">
+                    <b class="text-teal-600">${name}</b>
+                    <p class="text-sm mt-1">Source: ${source}</p>
+                    <p class="text-sm">Status: ${status}</p>
+                    <button class="mt-2 bg-teal-500 text-white text-xs font-semibold py-1 px-2 rounded-lg shadow-md hover:bg-teal-600 transition" onclick="checkIn()">
+                        Check In & Refill
+                    </button>
+                </div>
+            `;
         }
 
         /**
@@ -320,6 +356,12 @@
                 return;
             }
 
+            // Remove existing CSV layer before adding new markers
+            if (csvLayer) {
+                map.removeLayer(csvLayer);
+            }
+            const csvMarkers = [];
+
             let locationCount = 0;
             let firstLocation = null;
             let latLngs = []; 
@@ -339,17 +381,11 @@
                 const name = values[nameIndex] ? values[nameIndex].trim() : `Bubbler ${i}`;
                 
                 if (!isNaN(lat) && !isNaN(lng) && name) {
-                    // Create a marker and add it DIRECTLY to the map (non-clustered)
-                    L.marker([lat, lng])
-                        .bindPopup(`
-                            <div class="font-inter text-gray-800">
-                                <b class="text-teal-600">${name}</b>
-                                <p class="text-sm mt-1">Status: Filtered (Assumed)</p>
-                                <button class="mt-2 bg-teal-500 text-white text-xs font-semibold py-1 px-2 rounded-lg shadow-md hover:bg-teal-600 transition" onclick="checkIn()">
-                                    Check In & Refill
-                                </button>
-                            </div>
-                        `).addTo(map); 
+                    // Create a marker and add it to the temporary array (using the unified icon)
+                    const marker = L.marker([lat, lng], {icon: bubblrIcon})
+                        .bindPopup(createBubblerPopup(name, "Internal CSV Data"));
+                    
+                    csvMarkers.push(marker);
                     
                     if (locationCount === 0) {
                         firstLocation = { name: name, distance: '150 m', status: 'Filtered' };
@@ -359,8 +395,10 @@
                 }
             }
 
+            // Add all CSV markers as a single layer
+            csvLayer = L.layerGroup(csvMarkers).addTo(map);
 
-            // Update the map status count
+            // Update the map status count (only the CSV count initially)
             document.getElementById('location-count').textContent = locationCount;
 
             // Update the nearest bubbler placeholder with the first location found
@@ -387,11 +425,11 @@
                 .then(csvString => {
                     // Once data is retrieved, parse it and display markers
                     parseCSVAndDisplayMarkers(map, csvString);
-                    displayMessage("Locations loaded successfully.", 1500);
+                    displayMessage("Internal locations loaded.", 1500);
                 })
                 .catch(error => {
                     console.error('Data Loading Error:', error);
-                    displayMessage("Failed to load locations. Check Console (F12) for details.", 5000);
+                    displayMessage("Failed to load internal locations. Check Console (F12) for details.", 5000);
                     document.getElementById('location-count').textContent = 'Error';
                     
                     const nearestStatus = document.getElementById('nearest-status');
@@ -400,6 +438,101 @@
                     nearestStatus.textContent = "Data Error";
                 });
         }
+        
+        // --- START NEW OVERPASS API FUNCTIONS ---
+
+        /**
+         * 2. Clears previous OSM markers and adds new markers from the fetched data.
+         * @param {Array<Object>} elements - Array of OSM elements (nodes) from the Overpass API response.
+         */
+        function displayOverpassMarkers(elements) {
+            const map = window.bubblrMap;
+
+            // Clear the previous OSM layer to avoid overlapping markers
+            if (osmLayer) {
+                map.removeLayer(osmLayer);
+            }
+            
+            if (elements.length === 0) return;
+
+            // Convert the raw OSM data into a GeoJSON format for Leaflet
+            const geoJsonFeatures = {
+                type: "FeatureCollection",
+                features: elements.map(el => ({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [el.lon, el.lat] 
+                    },
+                    "properties": {
+                        // Use tags for popup information
+                        "name": el.tags.name || "Public Fountain (OSM)",
+                        "access": el.tags.access || "yes"
+                    }
+                }))
+            };
+
+            // Create a new Leaflet GeoJSON layer
+            osmLayer = L.geoJSON(geoJsonFeatures, {
+                pointToLayer: function (feature, latlng) {
+                    // Use the unified bubblrIcon
+                    return L.marker(latlng, { icon: bubblrIcon })
+                        .bindPopup(createBubblerPopup(feature.properties.name, "OpenStreetMap"));
+                }
+            }).addTo(map);
+            
+            // Update the total location count to include both data sources
+            // Safely parse current count, defaulting to 0 if an error/NaN is present
+            const currentCountText = document.getElementById('location-count').textContent;
+            const csvCount = parseInt(currentCountText) || 0;
+            const totalCount = csvCount + elements.length;
+            document.getElementById('location-count').textContent = totalCount;
+            
+            displayMessage(`Found ${elements.length} OSM locations.`, 1500);
+        }
+
+        /**
+         * 1. Fetches public drinking fountains from the Overpass API based on the map's current view.
+         * @param {L.LatLngBounds} mapBounds - The current geographical bounds of the map view.
+         */
+        async function fetchOverpassFountains(mapBounds) {
+            // 1. Define the bounding box (bbox) coordinates
+            const minLat = mapBounds.getSouth();
+            const minLon = mapBounds.getWest();
+            const maxLat = mapBounds.getNorth();
+            const maxLon = mapBounds.getEast();
+
+            // 2. Construct the Overpass QL query
+            const query = `
+                [out:json][timeout:15];
+                // Query for nodes (points) with the drinking water tag within the current bounds
+                node[amenity=drinking_water](${minLat},${minLon},${maxLat},${maxLon});
+                out body;
+            `;
+
+            const url = 'https://overpass-api.de/api/interpreter';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    // Send the query as the request body
+                    body: query
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Overpass API Error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // 3. Process the fetched data
+                displayOverpassMarkers(data.elements);
+
+            } catch (error) {
+                console.error('Failed to fetch OpenStreetMap data:', error);
+            }
+        }
+        // --- END NEW OVERPASS API FUNCTIONS ---
         
         /**
          * Updates the Nearest Bubbler panel in the UI.
@@ -529,8 +662,20 @@
                 enableHighAccuracy: true
             });
 
-            // Load all locations from the external CSV URL
+            // Load all locations from the external CSV URL (your internal data)
             loadBubblerLocations(map);
+            
+            // --- NEW: INTEGRATE OVERPASS API ---
+            // Load initial OSM data for the default view
+            const initialBounds = map.getBounds();
+            fetchOverpassFountains(initialBounds);
+            
+            // Load new OSM data whenever the user moves or zooms the map
+            map.on('moveend', function() {
+                const newBounds = map.getBounds();
+                fetchOverpassFountains(newBounds);
+            });
+            // --- END NEW INTEGRATION ---
             
             // Initial stats display on load
             updateStatsDisplay();
@@ -594,7 +739,7 @@
                     // 2. Define the data to be shared
                     const shareData = {
                         title: 'Bubblr: Find Water, Track Impact',
-                        text: 'Find free public water refill stations near you and track your plastic-saving impact with the Bubblr web app!',
+                        text: 'Find free public water refill stations near you and track your plastic-saving impact with Bubblr',
                         url: window.location.href // Shares the URL of the current page
                     };
 
