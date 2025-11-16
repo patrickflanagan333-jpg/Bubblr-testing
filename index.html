@@ -52,14 +52,13 @@
 
         /* --- END OF MOBILE WHITESPACE FIXES --- */
 
-        /* Tab Management */
+        /* --- CRITICAL LAYOUT FIX HERE --- */
         .tab-content {
             display: none;
             width: 100%;
             height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
+            /* REMOVED: position: absolute; top: 0; left: 0; */
+            /* The map and impact tabs will now rely on Flexbox's height calculation. */
         }
 
         .tab-content.active {
