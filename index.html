@@ -176,14 +176,14 @@
                     <p>We combine two layers of data to provide comprehensive coverage:</p>
                     <ul class="list-disc list-inside space-y-1 ml-4 text-sm">
                         <li>**Internal CSV Data:** Curated, filtered, and verified locations (e.g., from local government sheets).</li>
-                        <li>**Community Data:** Real-time data fetched from the **OpenStreetMap/Overpass API** for global, community-contributed locations. This layer is dynamically loaded as you move the map.</li>
+                        <li>**Community Data:** Real-time data fetched from global, community-contributed locations. This layer is dynamically loaded as you move the map.</li>
                     </ul>
 
                     <h3 class="text-xl font-semibold mt-6">Technical Stack</h3>
                     <p>This application is built entirely on modern web technologies:</p>
                     <ul class="list-disc list-inside space-y-1 ml-4 text-sm">
                         <li>**Frontend:** HTML, JavaScript, Leaflet.js (for maps), and Tailwind CSS.</li>
-                        <li>**Backend:** Serverless **Netlify Functions** written in JavaScript to securely proxy requests to external APIs (OpenStreetMap and Google Sheets), avoiding CORS issues and API key exposure.</li>
+                        <li>**Backend:** Serverless **Netlify Functions** written in JavaScript to securely proxy requests to external APIs, avoiding CORS issues and API key exposure.</li>
                     </ul>
                     
                     <p class="pt-4 text-center text-xs text-gray-500">
@@ -527,7 +527,7 @@
                 displayCommunityMarkers(data.elements);
 
             } catch (error) {
-                console.error('Failed to fetch OpenStreetMap data via proxy:', error);
+                console.error('Failed to fetch Community data via proxy:', error);
                 
                 // *** PERFORMANCE FIX: Reset bounds if fetch fails, allowing a retry on next move
                 lastQueriedBounds = null; 
@@ -645,7 +645,7 @@
             const map = L.map('map').setView([initialLat, initialLng], initialZoom);
             window.bubblrMap = map;
 
-            // Add OpenStreetMap tiles
+            // Add Map tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
                 maxZoom: 19
