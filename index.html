@@ -88,14 +88,12 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 1000;
-            padding: 1.5rem; /* Increased padding */
+            padding: 1rem;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); /* Stronger shadow */
-            background-color: rgba(255, 255, 255, 0.95); /* More opaque */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.9);
             text-align: center;
             font-weight: 600;
-            max-width: 80%; /* Ensure it fits on screen */
-            border: 2px solid #ef4444; /* Added error border */
         }
     </style>
 </head>
@@ -115,9 +113,6 @@
             <div id="map-tab" class="tab-content active p-0 flex-col">
                 <div id="location-message" class="hidden">
                     <p id="location-text">Locating you...</p>
-                    <button id="location-dismiss-btn" class="mt-4 bg-teal-600 text-white font-semibold py-2 px-6 rounded-xl shadow-md hover:bg-teal-700 transition hidden">
-                        OK, Got It
-                    </button>
                 </div>
         
                 <div id="map" class="h-2/3">
@@ -439,7 +434,7 @@ md:grid-cols-2 gap-4">
         * @param {L.Map} map - The Leaflet map instance.
          */
         function loadBubblerLocations(map) {
-            displayMessage("Fetching Bubblr locations...", 5000);
+            // displayMessage("Fetching Bubblr locations...", 5000); // REMOVED
             // Inform the user that data is loading
 
             fetch(CSV_URL)
@@ -455,7 +450,7 @@ md:grid-cols-2 gap-4">
                 .then(csvString => {
                     // Once data is retrieved, parse it and display markers
                     parseCSVAndDisplayMarkers(map, csvString);
-                    displayMessage("Internal locations loaded.", 1500);
+                    // displayMessage("Internal locations loaded.", 1500); // <-- REMOVED
                 })
     
                 .catch(error => {
@@ -519,7 +514,7 @@ md:grid-cols-2 gap-4">
             const totalCount = csvCount + elements.length;
             document.getElementById('location-count').textContent = totalCount;
             
-            displayMessage(`Found ${elements.length} community locations.`, 1500);
+            // displayMessage(`Found ${elements.length} community locations.`, 1500); // <-- REMOVED
         }
 
         /**
@@ -565,34 +560,16 @@ md:grid-cols-2 gap-4">
         }
 
         /**
-         * MODIFIED: Displays a temporary or persistent message (modal) on the map screen.
-         * @param {string} text - The message to display.
-         * @param {number|'permanent'} duration - The duration in ms, or 'permanent' for a dismissible modal.
+         * Displays a temporary message on the map screen.
         */
         function displayMessage(text, duration = 2000) {
             const msgDiv = document.getElementById('location-message');
-            const dismissBtn = document.getElementById('location-dismiss-btn');
             document.getElementById('location-text').textContent = text;
             msgDiv.classList.remove('hidden');
-
-            if (duration === 'permanent') {
-                // Show the button and prevent auto-hiding
-                dismissBtn.classList.remove('hidden');
-                // Attach listener to dismiss the message when clicked
-                dismissBtn.onclick = () => msgDiv.classList.add('hidden');
-                // Ensure no previous timeouts interfere
-                if (window.msgTimeout) clearTimeout(window.msgTimeout);
-            } else {
-                // Hide the button and use timeout for temporary messages
-                dismissBtn.classList.add('hidden');
-                // Clear previous timeouts and set a new one
-                if (window.msgTimeout) clearTimeout(window.msgTimeout);
-                window.msgTimeout = setTimeout(() => {
-                    msgDiv.classList.add('hidden');
-                }, duration);
-            }
+            setTimeout(() => {
+                msgDiv.classList.add('hidden');
+            }, duration);
         }
-
         
         /**
          * Handles successful geolocation lookup.
@@ -635,26 +612,23 @@ md:grid-cols-2 gap-4">
         }
 
         /**
-         * MODIFIED: Handles geolocation errors, showing a persistent modal for permission denial.
+         * Handles geolocation errors.
         * @param {object} e - The error event object from Leaflet.
         */
         function onLocationError(e) {
             console.error("Geolocation Error:", e.message);
-            
+            // --- LOCATION ERROR HANDLER FIX: Provides explicit instructions to user ---
             let errorMessage = "Couldn't find location. Showing default area.";
-            let messageDuration = 6000; // Default timeout
-
             if (e.code === 1) { // PERMISSION_DENIED (User or browser settings blocked it)
-                errorMessage = "Location access denied. Please enable Location Services for this browser in your phone's settings to find the nearest bubblers. Click OK to dismiss.";
-                messageDuration = 'permanent'; // <-- Sets the modal to be persistent with an OK button
+                errorMessage = "Location access denied. Please **enable Location Services** for this browser in your phone's settings to find the nearest bubblers.";
             } else if (e.code === 2) { // POSITION_UNAVAILABLE
-                 errorMessage = "Location unavailable. Check your device's GPS signal. Showing default area.";
+                 errorMessage = "Location unavailable. Check your device's GPS signal.";
             } else if (e.code === 3) { // TIMEOUT
                  errorMessage = "Location search timed out. Try refreshing.";
             }
 
-            // Display the message using the updated function
-            displayMessage(errorMessage, messageDuration);
+            // Display a longer-lasting message with the specific instruction
+            displayMessage(errorMessage, 6000);
             // --------------------------------------------------------------------------
             
             const nearestStatus = document.getElementById('nearest-status');
