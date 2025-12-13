@@ -113,7 +113,11 @@
             <div id="map-tab" class="tab-content active p-0 flex-col">
                 <div id="location-message" class="hidden">
                     <p id="location-text">Locating you...</p>
-                </div>
+                    <div id="message-actions" class="mt-3 hidden space-x-2">
+                        <button id="message-dismiss-btn" class="bg-teal-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-teal-600 transition">Acknowledge</button>
+                        <button id="message-retry-btn" class="bg-gray-200 text-gray-800 text-sm font-semibold py-1 px-3 rounded-lg hover:bg-gray-300 transition">Retry</button>
+                    </div>
+                    </div>
         
                 <div id="map" class="h-2/3">
                 </div>
@@ -559,16 +563,74 @@ md:grid-cols-2 gap-4">
             document.getElementById('nearest-status').textContent = `${name}`;
         }
 
+        // START NEW FUNCTIONS FOR PERSISTENT MESSAGE
+        
         /**
-         * Displays a temporary message on the map screen.
-        */
-        function displayMessage(text, duration = 2000) {
+         * Hides the location message box.
+         */
+        function hideMessage() {
             const msgDiv = document.getElementById('location-message');
+            clearTimeout(msgDiv.autoHideTimeout);
+            msgDiv.classList.add('hidden');
+        }
+
+        /**
+         * Sets up event listeners for the Acknowledge and Retry buttons.
+         */
+        function setupMessageHandlers() {
+            const dismissBtn = document.getElementById('message-dismiss-btn');
+            const retryBtn = document.getElementById('message-retry-btn');
+
+            dismissBtn.addEventListener('click', hideMessage);
+
+            retryBtn.addEventListener('click', () => {
+                hideMessage();
+                // Call map.locate() to retry geolocation
+                const map = window.bubblrMap;
+                if (map) {
+                    // Display persistent loading message while trying
+                    displayMessage("Retrying location search...", -1); 
+                    map.locate({
+                        watch: false,
+                        setView: false,
+                        maxZoom: 16,
+                        enableHighAccuracy: true
+                    });
+                }
+            });
+        }
+        // END NEW FUNCTIONS
+        
+        /**
+         * Displays a temporary or persistent message on the map screen.
+         * @param {string} text - The message text.
+         * @param {number} [duration=2000] - Duration in ms before hiding. Use 0 or -1 for persistent.
+         * @param {boolean} [showButtons=false] - Whether to show the acknowledge/retry buttons.
+        */
+        function displayMessage(text, duration = 2000, showButtons = false) {
+            const msgDiv = document.getElementById('location-message');
+            const actionDiv = document.getElementById('message-actions');
             document.getElementById('location-text').textContent = text;
-            msgDiv.classList.remove('hidden');
-            setTimeout(() => {
-                msgDiv.classList.add('hidden');
-            }, duration);
+            
+            // Clear any existing timeout
+            clearTimeout(msgDiv.autoHideTimeout);
+            
+            // Show/hide buttons
+            if (showButtons) {
+                actionDiv.classList.remove('hidden');
+                // Persistent message, ensure visibility
+                msgDiv.classList.remove('hidden'); 
+            } else {
+                actionDiv.classList.add('hidden');
+                msgDiv.classList.remove('hidden');
+                
+                // Set the auto-hide timer only for non-persistent messages with duration > 0
+                if (duration > 0) {
+                    msgDiv.autoHideTimeout = setTimeout(() => {
+                        msgDiv.classList.add('hidden');
+                    }, duration);
+                }
+            }
         }
         
         /**
@@ -607,7 +669,8 @@ md:grid-cols-2 gap-4">
                 .openPopup();
             // Set the map zoom to 16 for a 5-minute walking distance view
             map.setView(e.latlng, 16);
-            displayMessage("Location found! Centering map.", 1500);
+            // This will clear any previous persistent error message.
+            displayMessage("Location found! Centering map.", 1500); 
             updateNearestBubbler('Searching for closest...', '0 m', 'Ready');
         }
 
@@ -620,15 +683,15 @@ md:grid-cols-2 gap-4">
             // --- LOCATION ERROR HANDLER FIX: Provides explicit instructions to user ---
             let errorMessage = "Couldn't find location. Showing default area.";
             if (e.code === 1) { // PERMISSION_DENIED (User or browser settings blocked it)
-                errorMessage = "Location access denied. Please **enable Location Services** for this browser in your phone's settings to find the nearest bubblers.";
+                errorMessage = "Location access denied. Please enable Location Services for this browser in your phone's settings to find the nearest bubblers.";
             } else if (e.code === 2) { // POSITION_UNAVAILABLE
                  errorMessage = "Location unavailable. Check your device's GPS signal.";
             } else if (e.code === 3) { // TIMEOUT
                  errorMessage = "Location search timed out. Try refreshing.";
             }
 
-            // Display a longer-lasting message with the specific instruction
-            displayMessage(errorMessage, 6000);
+            // Display a persistent message with buttons
+            displayMessage(errorMessage, -1, true); 
             // --------------------------------------------------------------------------
             
             const nearestStatus = document.getElementById('nearest-status');
@@ -662,6 +725,10 @@ md:grid-cols-2 gap-4">
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
                 maxZoom: 19
             }).addTo(map);
+            
+            // NEW: Setup action handlers for the message box
+            setupMessageHandlers();
+            
             // Set up location event handlers
             map.on('locationfound', onLocationFound);
             map.on('locationerror', onLocationError);
@@ -789,4 +856,4 @@ md:grid-cols-2 gap-4">
     </script>
 
 </body>
-</html>
+</html>R
