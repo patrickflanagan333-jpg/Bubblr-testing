@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bubblr: Find Water, Track Impact</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -322,6 +332,12 @@ md:grid-cols-2 gap-4">
             stats.moneySavedDollars += 2; 
             stats.co2OffsetKg += 0.2; 
             
+            // TRACKING: Log refill event to Google Analytics
+            gtag('event', 'refill_check_in', {
+                'event_category': 'engagement',
+                'event_label': 'Water Station Refill'
+            });
+
             // Update the UI
             updateStatsDisplay();
             // Give user feedback
@@ -825,6 +841,13 @@ md:grid-cols-2 gap-4">
                     };
                     // 3. Call the native share dialog
                     await navigator.share(shareData);
+                    
+                    // TRACKING: Log successful share event to Google Analytics
+                    gtag('event', 'share', {
+                        'method': 'Web Share API',
+                        'content_type': 'webapp_link'
+                    });
+
                     console.log('Bubblr was shared successfully.');
                     
                 } catch (error) {
@@ -856,4 +879,4 @@ md:grid-cols-2 gap-4">
     </script>
 
 </body>
-</html>R
+</html>
