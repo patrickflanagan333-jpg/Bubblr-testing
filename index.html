@@ -18,24 +18,19 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        [cite_start]/* CSS Master Styles [cite: 4-6] */
         html { height: 100%; overflow: hidden; }
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #e0f2f1;
+            font-family: 'Inter', sans-serif; background-color: #e0f2f1;
             display: flex; justify-content: center; align-items: center;
             margin: 0; padding: 0; min-height: 100dvh; width: 100vw; height: 100dvh;
         }
         #app-container {
             max-width: 420px; width: 100%; height: 100dvh;
-            background-color: #ffffff; overflow: hidden; display: flex; flex-direction: column;
-            position: relative;
+            background-color: #ffffff; overflow: hidden; display: flex; flex-direction: column; position: relative;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 1.25rem; border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 1.25rem; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         .tab-content { display: none; flex-grow: 1; height: 100%; position: relative; overflow: hidden; }
         .tab-content.active { display: flex; flex-direction: column; }
@@ -44,8 +39,7 @@
         .map-overlay-container > div { pointer-events: auto; }
         
         #location-alert-overlay {
-            position: absolute; inset: 0; z-index: 9999;
-            display: none; align-items: center; justify-content: center;
+            position: absolute; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center;
             padding: 1.5rem; background: rgba(0, 0, 0, 0.4);
         }
         #location-message {
@@ -102,9 +96,7 @@
                             </div>
                         </div>
                         <p class="text-[10px] text-gray-400 mb-2 text-center">Tracking <span id="location-count">0</span> locations</p>
-                        <button class="w-full bg-teal-600 text-white text-sm font-bold py-2.5 rounded-xl shadow-md">
-                            Get Directions
-                        </button>
+                        <button class="w-full bg-teal-600 text-white text-sm font-bold py-2.5 rounded-xl shadow-md">Get Directions</button>
                     </div>
                 </div>
             </div>
@@ -113,30 +105,18 @@
                 <h2 class="text-2xl font-extrabold text-teal-700 mb-4">Your Impact Score</h2>
                 <div class="grid grid-cols-1 gap-4">
                     <div class="glass-card p-5 bg-white">
-                        <div class="flex items-center mb-2">
-                            <i data-lucide="droplet" class="w-6 h-6 text-teal-500 mr-3"></i> 
-                            <h3 class="text-lg font-semibold text-gray-700">Bottles Saved</h3>
-                        </div>
+                        <div class="flex items-center mb-2"><i data-lucide="droplet" class="w-6 h-6 text-teal-500 mr-3"></i><h3 class="text-lg font-semibold text-gray-700">Bottles Saved</h3></div>
                         <p class="text-5xl font-extrabold text-teal-800" id="stat-bottles">0</p>
                         <p class="text-sm text-gray-500 mt-1">Refills tracked total</p>
                     </div>
                     <div class="glass-card p-5 bg-white">
-                        <div class="flex items-center mb-2">
-                            <i data-lucide="shield-check" class="w-6 h-6 text-pink-500 mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-700">Plastics Avoided</h3>
-                        </div>
+                        <div class="flex items-center mb-2"><i data-lucide="shield-check" class="w-6 h-6 text-pink-500 mr-3"></i><h3 class="text-lg font-semibold text-gray-700">Plastics Avoided</h3></div>
                         <p class="text-5xl font-extrabold text-pink-800" id="stat-plastics">0g</p>
                         <p class="text-sm text-gray-500 mt-1">Equivalent to microplastics in 3 fish</p>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="glass-card p-4 bg-white text-center">
-                            <p class="text-2xl font-bold text-green-800" id="stat-money">$0</p>
-                            <p class="text-[10px] text-gray-500 uppercase font-bold">Money Saved</p>
-                        </div>
-                        <div class="glass-card p-4 bg-white text-center">
-                            <p class="text-2xl font-bold text-gray-800" id="stat-co2">0kg</p>
-                            <p class="text-[10px] text-gray-500 uppercase font-bold">CO₂ Offset</p>
-                        </div>
+                        <div class="glass-card p-4 bg-white text-center"><p class="text-2xl font-bold text-green-800" id="stat-money">$0</p><p class="text-[10px] text-gray-500 uppercase font-bold">Money Saved</p></div>
+                        <div class="glass-card p-4 bg-white text-center"><p class="text-2xl font-bold text-gray-800" id="stat-co2">0kg</p><p class="text-[10px] text-gray-500 uppercase font-bold">CO₂ Offset</p></div>
                     </div>
                 </div>
             </div>
@@ -149,26 +129,15 @@
                         <h3 class="font-semibold text-teal-700 flex items-center"><i data-lucide="zap" class="w-4 h-4 mr-2"></i> Microplastic Threat</h3>
                         <p class="text-xs text-gray-600">Bottled water can contain 240,000 plastic particles per litre. Bubblr makes tap water the safer, easier choice.</p>
                     </div>
-                    <a href="mailto:Patrick.flanagan333@gmail.com" class="mt-6 flex justify-center items-center w-full bg-teal-600 text-white font-bold py-4 rounded-xl shadow-lg">
-                        <i data-lucide="mail" class="w-5 h-5 mr-2"></i> Contact Us
-                    </a>
+                    <a href="mailto:Patrick.flanagan333@gmail.com" class="mt-6 flex justify-center items-center w-full bg-teal-600 text-white font-bold py-4 rounded-xl shadow-lg"><i data-lucide="mail" class="w-5 h-5 mr-2"></i> Contact Us</a>
                 </div>
             </div>
         </main>
 
         <footer class="flex justify-around items-center h-16 bg-white border-t border-gray-100 z-10">
-            <button id="nav-map" class="nav-button text-teal-600 flex flex-col items-center p-1 active">
-                <i data-lucide="map" class="w-6 h-6"></i>
-                <span class="text-[10px] uppercase font-bold">Map</span>
-            </button>
-            <button id="nav-impact" class="nav-button text-gray-400 flex flex-col items-center p-1">
-                <i data-lucide="activity" class="w-6 h-6"></i>
-                <span class="text-[10px] uppercase font-bold">Impact</span>
-            </button>
-            <button id="nav-info" class="nav-button text-gray-400 flex flex-col items-center p-1">
-                <i data-lucide="info" class="w-6 h-6"></i>
-                <span class="text-[10px] uppercase font-bold">About</span>
-            </button>
+            <button id="nav-map" class="nav-button text-teal-600 flex flex-col items-center p-1 active"><i data-lucide="map" class="w-6 h-6"></i><span class="text-[10px] uppercase font-bold">Map</span></button>
+            <button id="nav-impact" class="nav-button text-gray-400 flex flex-col items-center p-1"><i data-lucide="activity" class="w-6 h-6"></i><span class="text-[10px] uppercase font-bold">Impact</span></button>
+            <button id="nav-info" class="nav-button text-gray-400 flex flex-col items-center p-1"><i data-lucide="info" class="w-6 h-6"></i><span class="text-[10px] uppercase font-bold">About</span></button>
         </footer>
     </div>
 
@@ -178,7 +147,6 @@
         const tabs = document.querySelectorAll('.tab-content');
         const navButtons = document.querySelectorAll('.nav-button');
 
-        [cite_start]// App State [cite: 42-43]
         let userMarker = null, csvLayer = null, communityLayer = null, lastUserLatLng = null;
         let hasInitiallySyncedNearest = false, currentNearestLatLng = null;
         let stats = { bottlesSaved: 0, plasticsAvoidedGrams: 0.0, moneySavedDollars: 0, co2OffsetKg: 0 };
@@ -193,24 +161,17 @@
             const instructions = document.getElementById('browser-instructions');
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
             instructions.innerHTML = isSafari 
-                ? `<b>Safari:</b> Tap 'AA' or Lock icon > Website Settings > Allow Location.`
-                : `<b>Chrome:</b> Tap the Lock icon > Enable Location permissions.`;
+                ? '<b>Safari:</b> Tap \'AA\' or Lock icon > Website Settings > Allow Location.'
+                : '<b>Chrome:</b> Tap the Lock icon > Enable Location permissions.';
             overlay.style.display = 'flex';
         }
 
-        document.getElementById('close-alert-btn').onclick = () => {
-            document.getElementById('location-alert-overlay').style.display = 'none';
-        };
+        document.getElementById('close-alert-btn').onclick = () => { document.getElementById('location-alert-overlay').style.display = 'none'; };
 
-        [cite_start]// Sharing Logic [cite: 44-47]
         async function handleShare() {
             if (navigator.share) {
                 try {
-                    await navigator.share({ 
-                        title: 'Bubblr: Find Free Water', 
-                        text: 'Find the nearest free drinking water fountains and track your impact!', 
-                        url: window.location.href 
-                    });
+                    await navigator.share({ title: 'Bubblr: Find Free Water', text: 'Find the nearest free drinking water fountains!', url: window.location.href });
                     gtag('event', 'share', { 'method': 'Web Share API' });
                 } catch (e) { if (e.name !== 'AbortError') console.error(e); }
             } else {
@@ -220,7 +181,6 @@
         }
         document.getElementById('shareButton').addEventListener('click', handleShare);
 
-        [cite_start]// Impact Logic [cite: 48-53]
         function updateStatsDisplay() {
             document.getElementById('stat-bottles').textContent = stats.bottlesSaved;
             document.getElementById('stat-plastics').textContent = `${(stats.plasticsAvoidedGrams).toFixed(1)}g`;
@@ -229,22 +189,16 @@
         }
 
         function checkIn() {
-            stats.bottlesSaved += 1;
-            stats.plasticsAvoidedGrams += 5.2;
-            stats.moneySavedDollars += 3.50;
-            stats.co2OffsetKg += 0.4;
+            stats.bottlesSaved += 1; stats.plasticsAvoidedGrams += 5.2; stats.moneySavedDollars += 3.50; stats.co2OffsetKg += 0.4;
             gtag('event', 'refill_check_in', { 'event_category': 'usage' });
-            updateStatsDisplay();
-            displayMessage("Checked in! Thank you for reusing.", 2000);
+            updateStatsDisplay(); displayMessage("Checked in! Thank you for reusing.", 2000);
             switchTab('impact-tab');
         }
 
-        [cite_start]// Nearest Station Logic [cite: 54-61]
         function findNearest(userLatLng) {
             if (!userLatLng) return;
             lastUserLatLng = userLatLng;
             let nearest = null; let minDistance = Infinity;
-            
             const layers = [csvLayer, communityLayer];
             let layersExist = false;
             layers.forEach(layer => {
@@ -256,7 +210,6 @@
                     });
                 }
             });
-
             if (nearest) {
                 const nameMatch = nearest.getPopup().getContent().match(/<b.*?>(.*?)<\/b>/);
                 const name = nameMatch ? nameMatch[1] : "Water Station";
@@ -264,9 +217,7 @@
                 document.getElementById('nearest-status').textContent = name;
                 document.getElementById('nearest-distance').textContent = distStr;
                 currentNearestLatLng = nearest.getLatLng();
-            } else if (!layersExist) {
-                setTimeout(() => findNearest(userLatLng), 1000);
-            }
+            } else if (!layersExist) { setTimeout(() => findNearest(userLatLng), 1000); }
         }
 
         function parseCsvLine(line) {
@@ -285,8 +236,7 @@
                 communityLayer = L.geoJSON(data.elements.map(el => ({"type":"Feature","geometry":{"type":"Point","coordinates":[el.lon, el.lat]},"properties":{"name":el.tags.name||"Public Fountain"}})), {
                     pointToLayer: (f, l) => L.marker(l, { icon: bubblrIcon }).bindPopup(`<b>${f.properties.name}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`)
                 }).addTo(window.bubblrMap);
-                updateCount();
-                if (lastUserLatLng) findNearest(lastUserLatLng);
+                updateCount(); if (lastUserLatLng) findNearest(lastUserLatLng);
             } catch (e) { console.error("Community fetch error", e); }
         }
 
@@ -302,27 +252,19 @@
             setTimeout(() => msgDiv.classList.add('hidden'), duration);
         }
 
-        [cite_start]// Map Initialization [cite: 68-74]
         function initializeMap() {
             if (document.getElementById('map')._leaflet_id) { window.bubblrMap.invalidateSize(); return; }
             const map = L.map('map', { zoomControl: false }).setView([-33.885, 151.23], 15);
             window.bubblrMap = map;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            
             map.on('locationfound', (e) => {
                 lastUserLatLng = e.latlng;
                 if (userMarker) map.removeLayer(userMarker);
                 userMarker = L.circleMarker(e.latlng, {radius: 8, color: 'white', weight: 3, fillColor: '#3b82f6', fillOpacity: 1}).addTo(map);
-                if (!hasInitiallySyncedNearest) {
-                    map.setView(e.latlng, 16);
-                    findNearest(e.latlng);
-                    hasInitiallySyncedNearest = true;
-                }
+                if (!hasInitiallySyncedNearest) { map.setView(e.latlng, 16); findNearest(e.latlng); hasInitiallySyncedNearest = true; }
             });
-
             map.on('locationerror', showLocationAlert);
             map.locate({ setView: false, watch: true });
-            
             fetch('/.netlify/functions/fetch-locations').then(res => res.text()).then(csv => {
                 const lines = csv.trim().split('\n');
                 const markers = lines.slice(1).map(l => {
@@ -330,15 +272,12 @@
                     return L.marker([parseFloat(v[1]), parseFloat(v[2])], {icon: bubblrIcon}).bindPopup(`<b>${v[0]}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`);
                 });
                 csvLayer = L.layerGroup(markers).addTo(map);
-                updateCount();
-                if (lastUserLatLng) findNearest(lastUserLatLng);
+                updateCount(); if (lastUserLatLng) findNearest(lastUserLatLng);
             });
-
             map.on('moveend', () => fetchCommunityFountains(map.getBounds()));
             setTimeout(() => { if(window.bubblrMap) window.bubblrMap.invalidateSize(); }, 200);
         }
 
-        [cite_start]// Navigation [cite: 75-78]
         document.getElementById('nearest-card').onclick = () => { if (currentNearestLatLng) window.bubblrMap.flyTo(currentNearestLatLng, 18); };
 
         function switchTab(targetId) {
