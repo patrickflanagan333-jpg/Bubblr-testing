@@ -18,7 +18,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        [cite_start]/* CSS Master Styles [cite: 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] */
         html { height: 100%; overflow: hidden; }
         body {
             font-family: 'Inter', sans-serif;
@@ -48,26 +47,30 @@
         }
         .leaflet-bottom.leaflet-right { bottom: 140px !important; }
 
-        /* New Simple Location Alert UI */
+        /* Enhanced Location Alert UI */
         #location-alert-overlay {
-            position: absolute; inset: 0; z-index: 5000;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-            display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+            position: absolute; inset: 0; z-index: 9999;
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center; padding: 1.5rem;
         }
     </style>
 </head>
 <body>
 
     <div id="app-container">
-        <div id="location-alert-overlay" class="hidden">
-            <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm text-center animate-in fade-in zoom-in duration-300">
-                <div class="w-16 h-16 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="map-pin" class="w-8 h-8"></i>
+        <div id="location-alert-overlay">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm text-center">
+                <div class="w-20 h-20 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="map-pin" class="w-10 h-10"></i>
                 </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Location Needed</h3>
-                <p id="location-help-text" class="text-gray-600 text-sm mb-6 leading-relaxed"></p>
-                <button onclick="dismissLocationAlert()" class="w-full bg-teal-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition">
-                    OK, I Understand
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Location Disabled</h3>
+                <p class="text-gray-500 text-sm mb-6">To find the nearest bubblers, we need to know where you are.</p>
+                
+                <div id="location-help-text" class="text-gray-700 text-sm mb-8 space-y-3 text-left bg-teal-50 p-5 rounded-2xl border border-teal-100">
+                    </div>
+                
+                <button id="close-alert-btn" class="w-full bg-teal-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-lg">
+                    OK, I'll fix it
                 </button>
             </div>
         </div>
@@ -90,7 +93,7 @@
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <h2 class="text-xs font-bold uppercase tracking-wider text-teal-700 flex items-center">
-                                     [cite_start]<i data-lucide="navigation" class="w-3 h-3 mr-1"></i> Nearest Bubbler [cite: 22, 23]
+                                     <i data-lucide="navigation" class="w-3 h-3 mr-1"></i> Nearest Bubbler
                                 </h2>
                                 <p class="text-lg font-bold text-gray-900 leading-tight" id="nearest-status">Scanning...</p>
                             </div>
@@ -101,7 +104,7 @@
                         </div>
                         <p class="text-[10px] text-gray-400 mb-2 text-center">Tracking <span id="location-count">0</span> locations</p>
                         <button class="w-full bg-teal-600 text-white text-sm font-bold py-2.5 rounded-xl shadow-md">
-                            [cite_start]Get Directions [cite: 26]
+                            Get Directions
                         </button>
                     </div>
                 </div>
@@ -141,12 +144,9 @@
 
             <div id="info-tab" class="tab-content p-4 overflow-y-auto">
                 <h2 class="text-2xl font-extrabold text-teal-700 mb-4">About Bubblr</h2>
-                <div class="space-y-4">
-                    <p class="text-gray-700 leading-relaxed">We can’t recycle our way out of this. Bubblr is setting Australia on a path toward a microplastics-free future.</p>
-                    <div class="glass-card p-4 bg-teal-50/50">
-                        <h3 class="font-semibold text-teal-700 flex items-center"><i data-lucide="zap" class="w-4 h-4 mr-2"></i> Microplastic Threat</h3>
-                        <p class="text-xs text-gray-600">Bottled water can contain 240,000 plastic particles per litre. Bubblr makes tap water the safer, easier choice.</p>
-                    </div>
+                <div class="space-y-4 text-gray-700">
+                    <p>We can’t recycle our way out of this. Bubblr is setting Australia on a path toward a microplastics-free future.</p>
+                    <p>Bubblr helps you find clean, free water stations so you never have to buy a plastic bottle again.</p>
                     <a href="mailto:Patrick.flanagan333@gmail.com" class="mt-6 flex justify-center items-center w-full bg-teal-600 text-white font-bold py-4 rounded-xl shadow-lg">
                         <i data-lucide="mail" class="w-5 h-5 mr-2"></i> Contact Us
                     </a>
@@ -172,11 +172,10 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        lucide.createIcons(); [cite_start]// [cite: 41]
+        lucide.createIcons();
         const tabs = document.querySelectorAll('.tab-content');
         const navButtons = document.querySelectorAll('.nav-button');
 
-        [cite_start]// App State Preserved [cite: 42, 43]
         let userMarker = null, csvLayer = null, communityLayer = null, lastUserLatLng = null;
         let hasInitiallySyncedNearest = false, currentNearestLatLng = null;
         let stats = { bottlesSaved: 0, plasticsAvoidedGrams: 0.0, moneySavedDollars: 0, co2OffsetKg: 0 };
@@ -187,26 +186,38 @@
             iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         });
 
-        // 1. ALERT LOGIC (New)
+        // --- LOCATION ALERT LOGIC ---
         function showLocationAlert() {
             const overlay = document.getElementById('location-alert-overlay');
             const helpText = document.getElementById('location-help-text');
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
             
+            overlay.style.display = 'flex';
+
             if (isSafari) {
-                helpText.innerHTML = "To find water stations, Bubblr needs your location. Tap the <b>'AA'</b> or <b>Lock</b> icon and select <b>Website Settings</b> to allow location.";
+                helpText.innerHTML = `
+                    <p class="font-bold text-teal-800">For Safari (iPhone):</p>
+                    <p><b>1.</b> Tap the <b>'AA'</b> or <b>Lock</b> icon in your address bar.</p>
+                    <p><b>2.</b> Select <b>Website Settings</b>.</p>
+                    <p><b>3.</b> Set Location to <b>Allow</b>.</p>
+                `;
             } else {
-                helpText.innerHTML = "To find water stations, Bubblr needs your location. Tap the <b>Lock</b> icon in your browser bar and toggle <b>Location</b> to 'On'.";
+                helpText.innerHTML = `
+                    <p class="font-bold text-teal-800">For Chrome / Android:</p>
+                    <p><b>1.</b> Tap the <b>Lock</b> icon next to the URL.</p>
+                    <p><b>2.</b> Ensure <b>Location</b> is turned <b>ON</b>.</p>
+                    <p><b>3.</b> Close this and refresh the page.</p>
+                `;
             }
-            overlay.classList.remove('hidden');
         }
 
-        function dismissLocationAlert() {
-            document.getElementById('location-alert-overlay').classList.add('hidden');
+        document.getElementById('close-alert-btn').onclick = function() {
+            document.getElementById('location-alert-overlay').style.display = 'none';
+            // Trigger locate again
             if (window.bubblrMap) window.bubblrMap.locate({ setView: true, maxZoom: 16 });
-        }
+        };
 
-        [cite_start]// 2. Sharing & Analytics Preserved [cite: 44-47]
+        // --- BACKUP FEATURES: SHARING & STATS ---
         async function handleShare() {
             if (navigator.share) {
                 try {
@@ -218,15 +229,7 @@
                 displayMessage("Link copied to clipboard!", 2000);
             }
         }
-        document.getElementById('shareButton').addEventListener('click', handleShare);
-
-        [cite_start]// 3. Impact Tracking Preserved [cite: 48-53]
-        function updateStatsDisplay() {
-            document.getElementById('stat-bottles').textContent = stats.bottlesSaved;
-            document.getElementById('stat-plastics').textContent = `${(stats.plasticsAvoidedGrams).toFixed(1)}g`;
-            document.getElementById('stat-money').textContent = `$${stats.moneySavedDollars.toFixed(2)}`;
-            document.getElementById('stat-co2').textContent = `${(stats.co2OffsetKg).toFixed(1)}kg`;
-        }
+        document.getElementById('shareButton').onclick = handleShare;
 
         function checkIn() {
             stats.bottlesSaved += 1;
@@ -235,21 +238,31 @@
             stats.co2OffsetKg += 0.4;
             gtag('event', 'refill_check_in', { 'event_category': 'usage' });
             updateStatsDisplay();
-            displayMessage("Checked in! Thank you for reusing.", 2000);
+            displayMessage("Refill tracked! Nice work. 💧", 2000);
             switchTab('impact-tab');
         }
 
-        [cite_start]// 4. Nearest Station & CSV Logic Preserved [cite: 54-61]
+        function updateStatsDisplay() {
+            document.getElementById('stat-bottles').textContent = stats.bottlesSaved;
+            document.getElementById('stat-plastics').textContent = `${(stats.plasticsAvoidedGrams).toFixed(1)}g`;
+            document.getElementById('stat-money').textContent = `$${stats.moneySavedDollars.toFixed(2)}`;
+            document.getElementById('stat-co2').textContent = `${(stats.co2OffsetKg).toFixed(1)}kg`;
+        }
+
+        // --- BACKUP FEATURES: CSV & NEAREST ---
+        function parseCsvLine(line) {
+            const re = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
+            return line.split(re).map(v => v.replace(/^"|"$/g, '').trim());
+        }
+
         function findNearest(userLatLng) {
             if (!userLatLng) return;
             lastUserLatLng = userLatLng;
             let nearest = null; let minDistance = Infinity;
             
             const layers = [csvLayer, communityLayer];
-            let layersExist = false;
             layers.forEach(layer => {
-                if (layer && layer.getLayers().length > 0) {
-                    layersExist = true;
+                if (layer) {
                     layer.eachLayer(marker => {
                         const dist = userLatLng.distanceTo(marker.getLatLng());
                         if (dist < minDistance) { minDistance = dist; nearest = marker; }
@@ -264,17 +277,9 @@
                 document.getElementById('nearest-status').textContent = name;
                 document.getElementById('nearest-distance').textContent = distStr;
                 currentNearestLatLng = nearest.getLatLng();
-            } else if (!layersExist) {
-                setTimeout(() => findNearest(userLatLng), 1000);
             }
         }
 
-        function parseCsvLine(line) {
-            const re = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
-            return line.split(re).map(v => v.replace(/^"|"$/g, '').trim());
-        }
-
-        [cite_start]// 5. Netlify Community Fetching Preserved [cite: 62-65]
         async function fetchCommunityFountains(bounds) {
             try {
                 const res = await fetch('/.netlify/functions/fetch-all', {
@@ -288,7 +293,7 @@
                 }).addTo(window.bubblrMap);
                 updateCount();
                 if (lastUserLatLng) findNearest(lastUserLatLng);
-            } catch (e) { console.error("Community fetch error", e); }
+            } catch (e) { console.error(e); }
         }
 
         function updateCount() {
@@ -303,7 +308,7 @@
             setTimeout(() => msgDiv.classList.add('hidden'), duration);
         }
 
-        [cite_start]// 6. Map Initialization Preserved [cite: 68-74]
+        // --- MAP INITIALIZATION ---
         function initializeMap() {
             if (document.getElementById('map')._leaflet_id) { window.bubblrMap.invalidateSize(); return; }
             const map = L.map('map', { zoomControl: false }).setView([-33.885, 151.23], 15);
@@ -321,7 +326,7 @@
                 }
             });
 
-            map.on('locationerror', () => showLocationAlert());
+            map.on('locationerror', showLocationAlert);
 
             map.locate({ setView: false, watch: true });
             
@@ -333,15 +338,10 @@
                 });
                 csvLayer = L.layerGroup(markers).addTo(map);
                 updateCount();
-                if (lastUserLatLng) findNearest(lastUserLatLng);
             });
 
             map.on('moveend', () => fetchCommunityFountains(map.getBounds()));
-            setTimeout(() => { map.invalidateSize(); }, 200);
         }
-
-        [cite_start]// 7. Navigation Preserved [cite: 75-78]
-        document.getElementById('nearest-card').onclick = () => { if (currentNearestLatLng) window.bubblrMap.flyTo(currentNearestLatLng, 18); };
 
         function switchTab(targetId) {
             tabs.forEach(tab => tab.classList.remove('active'));
@@ -354,8 +354,10 @@
             if (targetId === 'map-tab') setTimeout(initializeMap, 50);
         }
 
-        navButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.id.replace('nav-', '') + '-tab')));
-        switchTab('map-tab');
+        navButtons.forEach(btn => btn.onclick = () => switchTab(btn.id.replace('nav-', '') + '-tab'));
+        document.getElementById('nearest-card').onclick = () => { if (currentNearestLatLng) window.bubblrMap.flyTo(currentNearestLatLng, 18); };
+
+        window.onload = initializeMap;
     </script>
 </body>
 </html>
