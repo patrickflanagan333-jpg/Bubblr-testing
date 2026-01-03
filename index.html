@@ -18,7 +18,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        /* CSS Master Styles - Full Mobile Optimization */
+        [cite_start]/* CSS Master Styles [cite: 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] */
         html { height: 100%; overflow: hidden; }
         body {
             font-family: 'Inter', sans-serif;
@@ -48,17 +48,30 @@
         }
         .leaflet-bottom.leaflet-right { bottom: 140px !important; }
 
-        /* New Location Onboarding Styles */
-        #location-bridge {
-            position: absolute; inset: 0; z-index: 2000; background: white;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 2rem; text-align: center;
+        /* New Simple Location Alert UI */
+        #location-alert-overlay {
+            position: absolute; inset: 0; z-index: 5000;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; padding: 1.5rem;
         }
     </style>
 </head>
 <body>
 
     <div id="app-container">
+        <div id="location-alert-overlay" class="hidden">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm text-center animate-in fade-in zoom-in duration-300">
+                <div class="w-16 h-16 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="map-pin" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Location Needed</h3>
+                <p id="location-help-text" class="text-gray-600 text-sm mb-6 leading-relaxed"></p>
+                <button onclick="dismissLocationAlert()" class="w-full bg-teal-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition">
+                    OK, I Understand
+                </button>
+            </div>
+        </div>
+
         <header class="p-4 flex justify-between items-center bg-teal-600 text-white shadow-lg z-10">
             <h1 class="text-2xl font-bold">💧 Bubblr</h1>
             <button id="shareButton" class="p-2 rounded-full hover:bg-teal-700 transition" aria-label="Share">
@@ -68,25 +81,6 @@
 
         <main class="flex-grow overflow-hidden relative">
             <div id="map-tab" class="tab-content active p-0">
-                <div id="location-bridge" class="hidden">
-                    <div class="bg-teal-50 p-6 rounded-full mb-6">
-                        <i data-lucide="map-pin" class="w-12 h-12 text-teal-600"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Find Water Nearby</h2>
-                    <p class="text-gray-600 mb-8 text-sm px-4">Bubblr needs your location to show the nearest refill stations and track your environmental impact.</p>
-                    
-                    <button onclick="triggerLocationRequest()" class="w-full bg-teal-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition mb-4">
-                        Enable Location
-                    </button>
-
-                    <div id="denied-instructions" class="hidden animate-in fade-in duration-500">
-                        <div class="p-4 bg-red-50 rounded-xl border border-red-100">
-                            <p class="text-xs text-red-700 font-bold mb-1 uppercase tracking-tight">Access is Blocked</p>
-                            <p id="browser-help-text" class="text-xs text-gray-600"></p>
-                        </div>
-                    </div>
-                </div>
-
                 <div id="location-message" class="hidden">
                     <p id="location-text" class="text-sm">Locating you...</p>
                 </div>
@@ -96,7 +90,7 @@
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <h2 class="text-xs font-bold uppercase tracking-wider text-teal-700 flex items-center">
-                                     <i data-lucide="navigation" class="w-3 h-3 mr-1"></i> Nearest Bubbler
+                                     [cite_start]<i data-lucide="navigation" class="w-3 h-3 mr-1"></i> Nearest Bubbler [cite: 22, 23]
                                 </h2>
                                 <p class="text-lg font-bold text-gray-900 leading-tight" id="nearest-status">Scanning...</p>
                             </div>
@@ -107,7 +101,7 @@
                         </div>
                         <p class="text-[10px] text-gray-400 mb-2 text-center">Tracking <span id="location-count">0</span> locations</p>
                         <button class="w-full bg-teal-600 text-white text-sm font-bold py-2.5 rounded-xl shadow-md">
-                            Get Directions
+                            [cite_start]Get Directions [cite: 26]
                         </button>
                     </div>
                 </div>
@@ -178,11 +172,11 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        lucide.createIcons();
+        lucide.createIcons(); [cite_start]// [cite: 41]
         const tabs = document.querySelectorAll('.tab-content');
         const navButtons = document.querySelectorAll('.nav-button');
 
-        // App State
+        [cite_start]// App State Preserved [cite: 42, 43]
         let userMarker = null, csvLayer = null, communityLayer = null, lastUserLatLng = null;
         let hasInitiallySyncedNearest = false, currentNearestLatLng = null;
         let stats = { bottlesSaved: 0, plasticsAvoidedGrams: 0.0, moneySavedDollars: 0, co2OffsetKg: 0 };
@@ -193,65 +187,59 @@
             iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         });
 
-        // --- LOCATION LOGIC ---
-
-        async function checkLocationStatus() {
-            const bridge = document.getElementById('location-bridge');
-            const deniedDiv = document.getElementById('denied-instructions');
-            const helpText = document.getElementById('browser-help-text');
-
-            // 1. Detect Browser to provide specific help
+        // 1. ALERT LOGIC (New)
+        function showLocationAlert() {
+            const overlay = document.getElementById('location-alert-overlay');
+            const helpText = document.getElementById('location-help-text');
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            helpText.innerHTML = isSafari 
-                ? "Tap the <b>'AA'</b> or <b>Lock</b> icon in your address bar, select <b>Website Settings</b>, and set Location to <b>Allow</b>."
-                : "Tap the <b>Lock</b> or <b>Tune</b> icon next to the URL above and toggle <b>Location</b> to 'On'.";
-
-            // 2. Check Permission State
-            if (navigator.permissions) {
-                try {
-                    const status = await navigator.permissions.query({ name: 'geolocation' });
-                    
-                    if (status.state === 'granted') {
-                        bridge.classList.add('hidden');
-                        initializeMap();
-                    } else {
-                        bridge.classList.remove('hidden');
-                        if (status.state === 'denied') deniedDiv.classList.remove('hidden');
-                    }
-
-                    // Auto-start map if they change settings while the app is open
-                    status.onchange = () => {
-                        if (status.state === 'granted') {
-                            bridge.classList.add('hidden');
-                            initializeMap();
-                        }
-                    };
-                } catch (e) {
-                    initializeMap(); // Fallback
-                }
+            
+            if (isSafari) {
+                helpText.innerHTML = "To find water stations, Bubblr needs your location. Tap the <b>'AA'</b> or <b>Lock</b> icon and select <b>Website Settings</b> to allow location.";
             } else {
-                // Safari fallback: just try to load
-                initializeMap();
+                helpText.innerHTML = "To find water stations, Bubblr needs your location. Tap the <b>Lock</b> icon in your browser bar and toggle <b>Location</b> to 'On'.";
+            }
+            overlay.classList.remove('hidden');
+        }
+
+        function dismissLocationAlert() {
+            document.getElementById('location-alert-overlay').classList.add('hidden');
+            if (window.bubblrMap) window.bubblrMap.locate({ setView: true, maxZoom: 16 });
+        }
+
+        [cite_start]// 2. Sharing & Analytics Preserved [cite: 44-47]
+        async function handleShare() {
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: 'Bubblr', text: 'Find free water near you!', url: window.location.href });
+                    gtag('event', 'share', { 'method': 'Web Share API' });
+                } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                displayMessage("Link copied to clipboard!", 2000);
             }
         }
+        document.getElementById('shareButton').addEventListener('click', handleShare);
 
-        function triggerLocationRequest() {
-            // Triggering the real browser prompt
-            navigator.geolocation.getCurrentPosition(
-                () => { 
-                    document.getElementById('location-bridge').classList.add('hidden');
-                    initializeMap(); 
-                },
-                (err) => {
-                    if (err.code === 1) { // PERMISSION_DENIED
-                        document.getElementById('denied-instructions').classList.remove('hidden');
-                    }
-                }
-            );
+        [cite_start]// 3. Impact Tracking Preserved [cite: 48-53]
+        function updateStatsDisplay() {
+            document.getElementById('stat-bottles').textContent = stats.bottlesSaved;
+            document.getElementById('stat-plastics').textContent = `${(stats.plasticsAvoidedGrams).toFixed(1)}g`;
+            document.getElementById('stat-money').textContent = `$${stats.moneySavedDollars.toFixed(2)}`;
+            document.getElementById('stat-co2').textContent = `${(stats.co2OffsetKg).toFixed(1)}kg`;
         }
 
-        // --- EXISTING MAP LOGIC ---
+        function checkIn() {
+            stats.bottlesSaved += 1;
+            stats.plasticsAvoidedGrams += 5.2;
+            stats.moneySavedDollars += 3.50;
+            stats.co2OffsetKg += 0.4;
+            gtag('event', 'refill_check_in', { 'event_category': 'usage' });
+            updateStatsDisplay();
+            displayMessage("Checked in! Thank you for reusing.", 2000);
+            switchTab('impact-tab');
+        }
 
+        [cite_start]// 4. Nearest Station & CSV Logic Preserved [cite: 54-61]
         function findNearest(userLatLng) {
             if (!userLatLng) return;
             lastUserLatLng = userLatLng;
@@ -259,7 +247,6 @@
             
             const layers = [csvLayer, communityLayer];
             let layersExist = false;
-            
             layers.forEach(layer => {
                 if (layer && layer.getLayers().length > 0) {
                     layersExist = true;
@@ -282,6 +269,12 @@
             }
         }
 
+        function parseCsvLine(line) {
+            const re = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
+            return line.split(re).map(v => v.replace(/^"|"$/g, '').trim());
+        }
+
+        [cite_start]// 5. Netlify Community Fetching Preserved [cite: 62-65]
         async function fetchCommunityFountains(bounds) {
             try {
                 const res = await fetch('/.netlify/functions/fetch-all', {
@@ -298,6 +291,19 @@
             } catch (e) { console.error("Community fetch error", e); }
         }
 
+        function updateCount() {
+            let count = (csvLayer ? csvLayer.getLayers().length : 0) + (communityLayer ? communityLayer.getLayers().length : 0);
+            document.getElementById('location-count').textContent = count;
+        }
+
+        function displayMessage(text, duration = 2000) {
+            const msgDiv = document.getElementById('location-message');
+            document.getElementById('location-text').textContent = text;
+            msgDiv.classList.remove('hidden');
+            setTimeout(() => msgDiv.classList.add('hidden'), duration);
+        }
+
+        [cite_start]// 6. Map Initialization Preserved [cite: 68-74]
         function initializeMap() {
             if (document.getElementById('map')._leaflet_id) { window.bubblrMap.invalidateSize(); return; }
             const map = L.map('map', { zoomControl: false }).setView([-33.885, 151.23], 15);
@@ -308,7 +314,6 @@
                 lastUserLatLng = e.latlng;
                 if (userMarker) map.removeLayer(userMarker);
                 userMarker = L.circleMarker(e.latlng, {radius: 8, color: 'white', weight: 3, fillColor: '#3b82f6', fillOpacity: 1}).addTo(map);
-                
                 if (!hasInitiallySyncedNearest) {
                     map.setView(e.latlng, 16);
                     findNearest(e.latlng);
@@ -316,12 +321,14 @@
                 }
             });
 
+            map.on('locationerror', () => showLocationAlert());
+
             map.locate({ setView: false, watch: true });
             
             fetch('/.netlify/functions/fetch-locations').then(res => res.text()).then(csv => {
                 const lines = csv.trim().split('\n');
                 const markers = lines.slice(1).map(l => {
-                    const v = l.split(',').map(item => item.trim()); // Simplified CSV parse for this example
+                    const v = parseCsvLine(l);
                     return L.marker([parseFloat(v[1]), parseFloat(v[2])], {icon: bubblrIcon}).bindPopup(`<b>${v[0]}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`);
                 });
                 csvLayer = L.layerGroup(markers).addTo(map);
@@ -333,7 +340,9 @@
             setTimeout(() => { map.invalidateSize(); }, 200);
         }
 
-        // Navigation and General App Logic
+        [cite_start]// 7. Navigation Preserved [cite: 75-78]
+        document.getElementById('nearest-card').onclick = () => { if (currentNearestLatLng) window.bubblrMap.flyTo(currentNearestLatLng, 18); };
+
         function switchTab(targetId) {
             tabs.forEach(tab => tab.classList.remove('active'));
             document.getElementById(targetId).classList.add('active');
@@ -342,16 +351,11 @@
                 btn.classList.toggle('text-teal-600', active);
                 btn.classList.toggle('text-gray-400', !active);
             });
-            if (targetId === 'map-tab') checkLocationStatus();
+            if (targetId === 'map-tab') setTimeout(initializeMap, 50);
         }
 
         navButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.id.replace('nav-', '') + '-tab')));
-        document.getElementById('nearest-card').onclick = () => { if (currentNearestLatLng) window.bubblrMap.flyTo(currentNearestLatLng, 18); };
-
-        // Start checking on load
-        checkLocationStatus();
-
-        // (Include your existing handleShare, updateStatsDisplay, checkIn functions here...)
+        switchTab('map-tab');
     </script>
 </body>
 </html>
