@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bubblr: Find Water, Track Impact</title>
+    <title>Bubblr: Find Free Water</title>
     
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-DC3YPVQMF6"></script>
     <script>
@@ -18,7 +18,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        /* CSS Master Styles - Full Mobile Optimization [cite: 4-6] */
+        [cite_start]/* CSS Master Styles [cite: 4-6] */
         html { height: 100%; overflow: hidden; }
         body {
             font-family: 'Inter', sans-serif;
@@ -43,7 +43,6 @@
         .map-overlay-container { position: absolute; bottom: 20px; left: 12px; right: 12px; z-index: 1000; pointer-events: none; }
         .map-overlay-container > div { pointer-events: auto; }
         
-        /* Non-blocking Location Alert UI [cite: 17-18] */
         #location-alert-overlay {
             position: absolute; inset: 0; z-index: 9999;
             display: none; align-items: center; justify-content: center;
@@ -52,7 +51,7 @@
         #location-message {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1001;
             width: 85%; padding: 0.75rem; border-radius: 0.75rem; background-color: rgba(255, 255, 255, 0.95);
-            text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .leaflet-bottom.leaflet-right { bottom: 140px !important; }
     </style>
@@ -66,19 +65,17 @@
                     <i data-lucide="info" class="w-8 h-8"></i>
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 mb-2">Location Recommended</h3>
-                <p class="text-gray-600 text-sm mb-4">
-                    Bubblr works best when it can see your location to find the closest water stations.
-                </p>
-                <div id="browser-instructions" class="text-left bg-gray-50 p-4 rounded-xl text-xs text-gray-700 mb-6 space-y-2">
-                    </div>
-                <button id="close-alert-btn" class="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl shadow-md active:scale-95 transition-all">
-                    OK
-                </button>
+                <p class="text-gray-600 text-sm mb-4">Bubblr works best when it can see your location to find the closest water fountains.</p>
+                <div id="browser-instructions" class="text-left bg-gray-50 p-4 rounded-xl text-xs text-gray-700 mb-6 space-y-2"></div>
+                <button id="close-alert-btn" class="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl shadow-md active:scale-95 transition-all">OK</button>
             </div>
         </div>
 
         <header class="p-4 flex justify-between items-center bg-teal-600 text-white shadow-lg z-10">
-            <h1 class="text-2xl font-bold">💧 Bubblr</h1>
+            <div>
+                <h1 class="text-2xl font-bold leading-none">💧 Bubblr</h1>
+                <p class="text-[10px] font-medium uppercase tracking-widest opacity-90 mt-1">Find Free Water</p>
+            </div>
             <button id="shareButton" class="p-2 rounded-full hover:bg-teal-700 transition" aria-label="Share">
                 <i data-lucide="share-2" class="w-5 h-5"></i>
             </button>
@@ -95,7 +92,7 @@
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <h2 class="text-xs font-bold uppercase tracking-wider text-teal-700 flex items-center">
-                                     <i data-lucide="navigation" class="w-3 h-3 mr-1"></i> Nearest Bubbler
+                                     <i data-lucide="navigation" class="w-3 h-3 mr-1"></i> Nearest Water Fountain
                                 </h2>
                                 <p class="text-lg font-bold text-gray-900 leading-tight" id="nearest-status">Scanning...</p>
                             </div>
@@ -147,7 +144,7 @@
             <div id="info-tab" class="tab-content p-4 overflow-y-auto">
                 <h2 class="text-2xl font-extrabold text-teal-700 mb-4">About Bubblr</h2>
                 <div class="space-y-4">
-                    <p class="text-gray-700 leading-relaxed">We can’t recycle our way out of this. Bubblr is setting Australia on a path toward a microplastics-free future.</p>
+                    <p class="text-gray-700 leading-relaxed">We can’t recycle our way out of this. Bubblr is setting Australia on a path toward a microplastics-free future by making free drinking water easy to find.</p>
                     <div class="glass-card p-4 bg-teal-50/50">
                         <h3 class="font-semibold text-teal-700 flex items-center"><i data-lucide="zap" class="w-4 h-4 mr-2"></i> Microplastic Threat</h3>
                         <p class="text-xs text-gray-600">Bottled water can contain 240,000 plastic particles per litre. Bubblr makes tap water the safer, easier choice.</p>
@@ -181,7 +178,7 @@
         const tabs = document.querySelectorAll('.tab-content');
         const navButtons = document.querySelectorAll('.nav-button');
 
-        // App State [cite: 42-43]
+        [cite_start]// App State [cite: 42-43]
         let userMarker = null, csvLayer = null, communityLayer = null, lastUserLatLng = null;
         let hasInitiallySyncedNearest = false, currentNearestLatLng = null;
         let stats = { bottlesSaved: 0, plasticsAvoidedGrams: 0.0, moneySavedDollars: 0, co2OffsetKg: 0 };
@@ -191,17 +188,13 @@
             iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         });
 
-        // 1. Non-Blocking Alert Logic
         function showLocationAlert() {
             const overlay = document.getElementById('location-alert-overlay');
             const instructions = document.getElementById('browser-instructions');
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            
-            if (isSafari) {
-                instructions.innerHTML = `<b>Safari Users:</b> Tap the <b>'AA'</b> or <b>Lock</b> icon and select <b>Website Settings</b> to allow location.`;
-            } else {
-                instructions.innerHTML = `<b>Chrome Users:</b> Tap the <b>Lock</b> icon next to the URL to enable location permissions.`;
-            }
+            instructions.innerHTML = isSafari 
+                ? `<b>Safari:</b> Tap 'AA' or Lock icon > Website Settings > Allow Location.`
+                : `<b>Chrome:</b> Tap the Lock icon > Enable Location permissions.`;
             overlay.style.display = 'flex';
         }
 
@@ -209,11 +202,15 @@
             document.getElementById('location-alert-overlay').style.display = 'none';
         };
 
-        // 2. Sharing & Analytics Logic [cite: 44-47]
+        [cite_start]// Sharing Logic [cite: 44-47]
         async function handleShare() {
             if (navigator.share) {
                 try {
-                    await navigator.share({ title: 'Bubblr', text: 'Find free water near you!', url: window.location.href });
+                    await navigator.share({ 
+                        title: 'Bubblr: Find Free Water', 
+                        text: 'Find the nearest free drinking water fountains and track your impact!', 
+                        url: window.location.href 
+                    });
                     gtag('event', 'share', { 'method': 'Web Share API' });
                 } catch (e) { if (e.name !== 'AbortError') console.error(e); }
             } else {
@@ -223,7 +220,7 @@
         }
         document.getElementById('shareButton').addEventListener('click', handleShare);
 
-        // 3. Impact Tracking Logic [cite: 48-53]
+        [cite_start]// Impact Logic [cite: 48-53]
         function updateStatsDisplay() {
             document.getElementById('stat-bottles').textContent = stats.bottlesSaved;
             document.getElementById('stat-plastics').textContent = `${(stats.plasticsAvoidedGrams).toFixed(1)}g`;
@@ -242,7 +239,7 @@
             switchTab('impact-tab');
         }
 
-        // 4. Nearest Station Logic (With Safari Fix) [cite: 54-61]
+        [cite_start]// Nearest Station Logic [cite: 54-61]
         function findNearest(userLatLng) {
             if (!userLatLng) return;
             lastUserLatLng = userLatLng;
@@ -272,7 +269,6 @@
             }
         }
 
-        // 5. CSV & Data Loading [cite: 62-67]
         function parseCsvLine(line) {
             const re = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/g;
             return line.split(re).map(v => v.replace(/^"|"$/g, '').trim());
@@ -306,7 +302,7 @@
             setTimeout(() => msgDiv.classList.add('hidden'), duration);
         }
 
-        // 6. Map Initialization [cite: 68-74]
+        [cite_start]// Map Initialization [cite: 68-74]
         function initializeMap() {
             if (document.getElementById('map')._leaflet_id) { window.bubblrMap.invalidateSize(); return; }
             const map = L.map('map', { zoomControl: false }).setView([-33.885, 151.23], 15);
@@ -324,10 +320,7 @@
                 }
             });
 
-            map.on('locationerror', () => {
-                showLocationAlert();
-            });
-
+            map.on('locationerror', showLocationAlert);
             map.locate({ setView: false, watch: true });
             
             fetch('/.netlify/functions/fetch-locations').then(res => res.text()).then(csv => {
@@ -342,10 +335,10 @@
             });
 
             map.on('moveend', () => fetchCommunityFountains(map.getBounds()));
-            setTimeout(() => { map.invalidateSize(); }, 200);
+            setTimeout(() => { if(window.bubblrMap) window.bubblrMap.invalidateSize(); }, 200);
         }
 
-        // 7. Navigation Logic [cite: 75-78]
+        [cite_start]// Navigation [cite: 75-78]
         document.getElementById('nearest-card').onclick = () => { if (currentNearestLatLng) window.bubblrMap.flyTo(currentNearestLatLng, 18); };
 
         function switchTab(targetId) {
