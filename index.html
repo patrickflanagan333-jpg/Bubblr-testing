@@ -149,7 +149,17 @@
 
         let userMarker = null, csvLayer = null, communityLayer = null, lastUserLatLng = null;
         let hasInitiallySyncedNearest = false, currentNearestLatLng = null;
-        let stats = { bottlesSaved: 0, plasticsAvoidedGrams: 0.0, moneySavedDollars: 0, co2OffsetKg: 0 };
+        
+        // --- Persistence Logic Start ---
+        const savedStats = JSON.parse(localStorage.getItem('bubblr_stats'));
+        let stats = savedStats || { 
+            bottlesSaved: 0, 
+            plasticsAvoidedGrams: 0.0, 
+            moneySavedDollars: 0, 
+            co2OffsetKg: 0 
+        };
+        // --- Persistence Logic End ---
+
         const bubblrIcon = new L.Icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -189,9 +199,17 @@
         }
 
         function checkIn() {
-            stats.bottlesSaved += 1; stats.plasticsAvoidedGrams += 5.2; stats.moneySavedDollars += 3.50; stats.co2OffsetKg += 0.4;
+            stats.bottlesSaved += 1; 
+            stats.plasticsAvoidedGrams += 5.2; 
+            stats.moneySavedDollars += 3.50; 
+            stats.co2OffsetKg += 0.4;
+            
+            // --- Save to LocalStorage ---
+            localStorage.setItem('bubblr_stats', JSON.stringify(stats));
+
             gtag('event', 'refill_check_in', { 'event_category': 'usage' });
-            updateStatsDisplay(); displayMessage("Checked in! Thank you for reusing.", 2000);
+            updateStatsDisplay(); 
+            displayMessage("Checked in! Thank you for reusing.", 2000);
             switchTab('impact-tab');
         }
 
@@ -292,6 +310,9 @@
         }
 
         navButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.id.replace('nav-', '') + '-tab')));
+        
+        // --- Initialize App ---
+        updateStatsDisplay(); // Ensure saved stats appear on launch
         switchTab('map-tab');
     </script>
 </body>
