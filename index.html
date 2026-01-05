@@ -107,12 +107,12 @@
                     <div class="glass-card p-5 bg-white">
                         <div class="flex items-center mb-2"><i data-lucide="droplet" class="w-6 h-6 text-teal-500 mr-3"></i><h3 class="text-lg font-semibold text-gray-700">Bottles Saved</h3></div>
                         <p class="text-5xl font-extrabold text-teal-800" id="stat-bottles">0</p>
-                        <p class="text-sm text-gray-500 mt-1">Refills tracked total</p>
+                        <p class="text-sm text-gray-500 mt-1">Each 1 litre bottle can contain 240,000 plastic particles</p>
                     </div>
                     <div class="glass-card p-5 bg-white">
                         <div class="flex items-center mb-2"><i data-lucide="shield-check" class="w-6 h-6 text-pink-500 mr-3"></i><h3 class="text-lg font-semibold text-gray-700">Plastics Avoided</h3></div>
                         <p class="text-5xl font-extrabold text-pink-800" id="stat-plastics">0g</p>
-                        <p class="text-sm text-gray-500 mt-1">Equivalent to microplastics in 3 fish</p>
+                        <p class="text-sm text-gray-500 mt-1">Each 5g plastic bottle can leach billions of invisible plastic particles to the food chain</p>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="glass-card p-4 bg-white text-center"><p class="text-2xl font-bold text-green-800" id="stat-money">$0</p><p class="text-[10px] text-gray-500 uppercase font-bold">Money Saved</p></div>
@@ -124,7 +124,7 @@
             <div id="info-tab" class="tab-content p-4 overflow-y-auto">
                 <h2 class="text-2xl font-extrabold text-teal-700 mb-4">About Bubblr</h2>
                 <div class="space-y-4">
-                    <p class="text-gray-700 leading-relaxed">We can’t recycle our way out of this. Bubblr is setting Australia on a path toward a microplastics-free future by making free drinking water easy to find.</p>
+                    <p class="text-gray-700 leading-relaxed">We can’t recycle our way out of this! Bubblr is setting a path toward a microplastics-free future by making free drinking water easy to find. Contact us for sponsorship, collaboration, or to give us feedback.</p>
                     <div class="glass-card p-4 bg-teal-50/50">
                         <h3 class="font-semibold text-teal-700 flex items-center"><i data-lucide="zap" class="w-4 h-4 mr-2"></i> Microplastic Threat</h3>
                         <p class="text-xs text-gray-600">Bottled water can contain 240,000 plastic particles per litre. Bubblr makes tap water the safer, easier choice.</p>
@@ -169,8 +169,8 @@
             const instructions = document.getElementById('browser-instructions');
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
             instructions.innerHTML = isSafari 
-                ? '<b>Safari:</b> Tap \'AA\' or Lock icon > Website Settings > Allow Location.'
-                : '<b>Chrome:</b> Tap the Lock icon > Enable Location permissions.';
+                ? '<b>Safari:</b> Tap \'AA\' or the Rectangle icon on the left of the address bar> Website Settings > Allow Location.'
+                : '<b>Chrome:</b> Tap the Lock icon on the> Enable Location permissions.';
             overlay.style.display = 'flex';
         }
 
@@ -198,7 +198,7 @@
 
         function checkIn() {
             stats.bottlesSaved += 1; 
-            stats.plasticsAvoidedGrams += 5.2; 
+            stats.plasticsAvoidedGrams += 5; 
             stats.moneySavedDollars += 3.50; 
             stats.co2OffsetKg += 0.4;
             localStorage.setItem('bubblr_stats', JSON.stringify(stats));
@@ -239,7 +239,7 @@
         }
 
         async function fetchCommunityFountains(bounds) {
-            if (window.bubblrMap && window.bubblrMap.getZoom() < 12) return;
+            if (window.bubblrMap && window.bubblrMap.getZoom() < 14) return;
 
             try {
                 const res = await fetch('/.netlify/functions/fetch-all', {
@@ -277,7 +277,7 @@
             
             const map = L.map('map', { 
                 zoomControl: false,
-                minZoom: 12
+                minZoom: 14
             }).setView([-33.885, 151.23], 15);
             
             window.bubblrMap = map;
