@@ -150,7 +150,6 @@
         let userMarker = null, csvLayer = null, communityLayer = null, lastUserLatLng = null;
         let hasInitiallySyncedNearest = false, currentNearestLatLng = null;
         
-        // Load stats from persistence
         const savedStats = JSON.parse(localStorage.getItem('bubblr_stats'));
         let stats = savedStats || { 
             bottlesSaved: 0, 
@@ -202,9 +201,7 @@
             stats.plasticsAvoidedGrams += 5.2; 
             stats.moneySavedDollars += 3.50; 
             stats.co2OffsetKg += 0.4;
-            // Save back to local persistence
             localStorage.setItem('bubblr_stats', JSON.stringify(stats));
-
             gtag('event', 'refill_check_in', { 'event_category': 'usage' });
             updateStatsDisplay(); 
             displayMessage("Checked in! Thank you for reusing.", 2000);
@@ -242,7 +239,6 @@
         }
 
         async function fetchCommunityFountains(bounds) {
-            // Strategic Safeguard: Only fetch if zoom is at neighborhood level or closer
             if (window.bubblrMap && window.bubblrMap.getZoom() < 12) return;
 
             try {
@@ -251,10 +247,15 @@
                     body: JSON.stringify({ minLat: bounds.getSouth(), minLon: bounds.getWest(), maxLat: bounds.getNorth(), maxLon: bounds.getEast() })
                 });
                 const data = await res.json();
-                if (communityLayer) window.bubblrMap.removeLayer(communityLayer);
-                communityLayer = L.geoJSON(data.elements.map(el => ({"type":"Feature","geometry":{"type":"Point","coordinates":[el.lon, el.lat]},"properties":{"name":el.tags.name||"Public Fountain"}})), {
+                
+                // --- FIX: Swap layers ONLY after data is received to prevent disappearing markers ---
+                const newCommunityLayer = L.geoJSON(data.elements.map(el => ({"type":"Feature","geometry":{"type":"Point","coordinates":[el.lon, el.lat]},"properties":{"name":el.tags.name||"Public Fountain"}})), {
                     pointToLayer: (f, l) => L.marker(l, { icon: bubblrIcon }).bindPopup(`<b>${f.properties.name}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`)
-                }).addTo(window.bubblrMap);
+                });
+
+                if (communityLayer) window.bubblrMap.removeLayer(communityLayer);
+                communityLayer = newCommunityLayer.addTo(window.bubblrMap);
+                
                 updateCount(); if (lastUserLatLng) findNearest(lastUserLatLng);
             } catch (e) { console.error("Community fetch error", e); }
         }
@@ -274,10 +275,9 @@
         function initializeMap() {
             if (document.getElementById('map')._leaflet_id) { window.bubblrMap.invalidateSize(); return; }
             
-            // Optimization: Hard Zoom Limit (minZoom: 12) to prevent irrelevant API calls
             const map = L.map('map', { 
                 zoomControl: false,
-                minZoom: 12 
+                minZoom: 12
             }).setView([-33.885, 151.23], 15);
             
             window.bubblrMap = map;
@@ -318,7 +318,6 @@
 
         navButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.id.replace('nav-', '') + '-tab')));
         
-        // Final Init
         updateStatsDisplay(); 
         switchTab('map-tab');
     </script>
