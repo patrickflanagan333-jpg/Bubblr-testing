@@ -169,8 +169,8 @@
             const instructions = document.getElementById('browser-instructions');
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
             instructions.innerHTML = isSafari 
-                ? '<b>Safari:</b> Tap \'AA\' or the Rectangle icon on the left of the address bar> Website Settings > Allow Location.'
-                : '<b>Chrome:</b> Tap the Lock icon on the> Enable Location permissions.';
+                ? '<b>Safari:</b> Tap \'AA\' or the Rectangle icon on the left of the address bar > Website Settings > Allow Location.'
+                : '<b>Chrome:</b> Tap the Lock icon on the left of the address bar > Enable Location permissions.';
             overlay.style.display = 'flex';
         }
 
@@ -211,26 +211,38 @@
         function findNearest(userLatLng) {
             if (!userLatLng) return;
             lastUserLatLng = userLatLng;
-            let nearest = null; let minDistance = Infinity;
-            const layers = [csvLayer, communityLayer];
-            let layersExist = false;
-            layers.forEach(layer => {
-                if (layer && layer.getLayers().length > 0) {
-                    layersExist = true;
-                    layer.eachLayer(marker => {
-                        const dist = userLatLng.distanceTo(marker.getLatLng());
-                        if (dist < minDistance) { minDistance = dist; nearest = marker; }
-                    });
-                }
-            });
+            
+            let nearest = null; 
+            let minDistance = Infinity;
+
+            // COMBINED LOGIC: Pool markers from both CSV and OSM sources
+            const allMarkers = [];
+            if (csvLayer) csvLayer.eachLayer(m => allMarkers.push(m));
+            if (communityLayer) communityLayer.eachLayer(m => allMarkers.push(m));
+
+            if (allMarkers.length > 0) {
+                allMarkers.forEach(marker => {
+                    const dist = userLatLng.distanceTo(marker.getLatLng());
+                    if (dist < minDistance) { 
+                        minDistance = dist; 
+                        nearest = marker; 
+                    }
+                });
+            }
+
             if (nearest) {
-                const nameMatch = nearest.getPopup().getContent().match(/<b.*?>(.*?)<\/b>/);
+                const popupContent = nearest.getPopup().getContent();
+                const nameMatch = popupContent.match(/<b.*?>(.*?)<\/b>/);
                 const name = nameMatch ? nameMatch[1] : "Water Station";
                 const distStr = minDistance > 1000 ? (minDistance / 1000).toFixed(1) + ' km' : Math.round(minDistance) + ' m';
+                
                 document.getElementById('nearest-status').textContent = name;
                 document.getElementById('nearest-distance').textContent = distStr;
                 currentNearestLatLng = nearest.getLatLng();
-            } else if (!layersExist) { setTimeout(() => findNearest(userLatLng), 1000); }
+            } else {
+                document.getElementById('nearest-status').textContent = "Scanning...";
+                document.getElementById('nearest-distance').textContent = "---";
+            }
         }
 
         function parseCsvLine(line) {
@@ -248,7 +260,6 @@
                 });
                 const data = await res.json();
                 
-                // --- FIX: Swap layers ONLY after data is received to prevent disappearing markers ---
                 const newCommunityLayer = L.geoJSON(data.elements.map(el => ({"type":"Feature","geometry":{"type":"Point","coordinates":[el.lon, el.lat]},"properties":{"name":el.tags.name||"Public Fountain"}})), {
                     pointToLayer: (f, l) => L.marker(l, { icon: bubblrIcon }).bindPopup(`<b>${f.properties.name}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`)
                 });
@@ -256,7 +267,8 @@
                 if (communityLayer) window.bubblrMap.removeLayer(communityLayer);
                 communityLayer = newCommunityLayer.addTo(window.bubblrMap);
                 
-                updateCount(); if (lastUserLatLng) findNearest(lastUserLatLng);
+                updateCount(); 
+                if (lastUserLatLng) findNearest(lastUserLatLng);
             } catch (e) { console.error("Community fetch error", e); }
         }
 
@@ -282,14 +294,21 @@
             
             window.bubblrMap = map;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
             map.on('locationfound', (e) => {
                 lastUserLatLng = e.latlng;
                 if (userMarker) map.removeLayer(userMarker);
                 userMarker = L.circleMarker(e.latlng, {radius: 8, color: 'white', weight: 3, fillColor: '#3b82f6', fillOpacity: 1}).addTo(map);
-                if (!hasInitiallySyncedNearest) { map.setView(e.latlng, 16); findNearest(e.latlng); hasInitiallySyncedNearest = true; }
+                if (!hasInitiallySyncedNearest) { 
+                    map.setView(e.latlng, 16); 
+                    findNearest(e.latlng); 
+                    hasInitiallySyncedNearest = true; 
+                }
             });
+
             map.on('locationerror', showLocationAlert);
             map.locate({ setView: false, watch: true });
+
             fetch('/.netlify/functions/fetch-locations').then(res => res.text()).then(csv => {
                 const lines = csv.trim().split('\n');
                 const markers = lines.slice(1).map(l => {
@@ -297,13 +316,17 @@
                     return L.marker([parseFloat(v[1]), parseFloat(v[2])], {icon: bubblrIcon}).bindPopup(`<b>${v[0]}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`);
                 });
                 csvLayer = L.layerGroup(markers).addTo(map);
-                updateCount(); if (lastUserLatLng) findNearest(lastUserLatLng);
+                updateCount(); 
+                if (lastUserLatLng) findNearest(lastUserLatLng);
             });
+
             map.on('moveend', () => fetchCommunityFountains(map.getBounds()));
             setTimeout(() => { if(window.bubblrMap) window.bubblrMap.invalidateSize(); }, 200);
         }
 
-        document.getElementById('nearest-card').onclick = () => { if (currentNearestLatLng) window.bubblrMap.flyTo(currentNearestLatLng, 18); };
+        document.getElementById('nearest-card').onclick = () => { 
+            if (currentNearestLatLng) window.bubblrMap.flyTo(currentNearestLatLng, 18); 
+        };
 
         function switchTab(targetId) {
             tabs.forEach(tab => tab.classList.remove('active'));
