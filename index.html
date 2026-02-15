@@ -215,7 +215,6 @@
             let nearest = null; 
             let minDistance = Infinity;
 
-            // COMBINED LOGIC: Pool markers from both CSV and OSM sources
             const allMarkers = [];
             if (csvLayer) csvLayer.eachLayer(m => allMarkers.push(m));
             if (communityLayer) communityLayer.eachLayer(m => allMarkers.push(m));
@@ -260,11 +259,16 @@
                 });
                 const data = await res.json();
                 
+                // Create the NEW layer first
                 const newCommunityLayer = L.geoJSON(data.elements.map(el => ({"type":"Feature","geometry":{"type":"Point","coordinates":[el.lon, el.lat]},"properties":{"name":el.tags.name||"Public Fountain"}})), {
                     pointToLayer: (f, l) => L.marker(l, { icon: bubblrIcon }).bindPopup(`<b>${f.properties.name}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`)
                 });
 
-                if (communityLayer) window.bubblrMap.removeLayer(communityLayer);
+                // Remove the old layer only AFTER the new data is ready to be shown
+                if (communityLayer) {
+                    window.bubblrMap.removeLayer(communityLayer);
+                }
+                
                 communityLayer = newCommunityLayer.addTo(window.bubblrMap);
                 
                 updateCount(); 
