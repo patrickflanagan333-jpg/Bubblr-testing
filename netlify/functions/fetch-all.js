@@ -23,6 +23,9 @@ exports.handler = async (event, context) => {
         // 3. Send the request to the third-party API
         const response = await fetch(OVERPASS_API_URL, {
             method: 'POST',
+            headers: {
+              'User-Agent': 'BubblrApp/1.0 (https://bubblrapp.com; contact@your-email.com)'
+            },
             body: query
         });
 
