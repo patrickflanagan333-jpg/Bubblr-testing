@@ -24,7 +24,7 @@ exports.handler = async (event, context) => {
         const response = await fetch(OVERPASS_API_URL, {
             method: 'POST',
             headers: {
-              'User-Agent': 'BubblrApp/1.0 (https://bubblrapp.com; contact@your-email.com)'
+              'User-Agent': 'BubblrApp/1.0 (https://bubblrapp.com; hello@bubblrapp.com)'
             },
             body: query
         });
