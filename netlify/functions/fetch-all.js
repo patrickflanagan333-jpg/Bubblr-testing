@@ -1,6 +1,6 @@
 // netlify/functions/fetch-osm.js
 
-const OVERPASS_API_URL = 'https://openstreetmap.fr';
+const OVERPASS_API_URL = 'hhttps://overpass.kumi.systems/api/interpreter';
 
 exports.handler = async (event, context) => {
     // 1. Get the map bounds from the client's request body
