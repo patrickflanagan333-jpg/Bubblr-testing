@@ -15,7 +15,7 @@ exports.handler = async (event, context) => {
 
     // Simplified query asking for just the primary drinking water tag
     const query = `
-        [out:json][timeout:15];
+        [out:json][timeout:6];
         (
           node["amenity"="drinking_water"](${minLat},${minLon},${maxLat},${maxLon});
         );
