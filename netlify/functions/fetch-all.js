@@ -15,17 +15,21 @@ exports.handler = async (event, context) => {
     // The client sends bounds as a JSON string: {minLat, minLon, maxLat, maxLon}
     const { minLat, minLon, maxLat, maxLon } = JSON.parse(event.body);
 
-    // 2. CONSTRUCT THE OVERPASS QUERY
+    // 2. CONSTRUCT THE EXPANDED OVERSIGHT QUERY (with a fast 4s timeout)
     const query = `
-        [out:json][timeout:10];
-        node[amenity=drinking_water](${minLat},${minLon},${maxLat},${maxLon});
+        [out:json][timeout:4];
+        (
+          node["amenity"="drinking_water"](${minLat},${minLon},${maxLat},${maxLon});
+          node["man_made"="water_tap"]["drinking_water"="yes"](${minLat},${minLon},${maxLat},${maxLon});
+          node["amenity"="fountain"]["fountain"="bubbler"](${minLat},${minLon},${maxLat},${maxLon});
+        );
         out body;
     `;
 
     let data = null;
     let lastError = null;
 
-    // 3. Loop through trusted endpoints until one succeeds
+    // 3. Loop through trusted endpoints quickly until one succeeds
     for (const endpoint of OVERPASS_ENDPOINTS) {
         try {
             const response = await fetch(endpoint, {
@@ -72,4 +76,4 @@ exports.handler = async (event, context) => {
         },
         body: JSON.stringify(data),
     };
-}; // <--- THIS CLOSING BRACE WAS MISSING
+};
