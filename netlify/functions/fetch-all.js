@@ -1,6 +1,6 @@
 // netlify/functions/fetch-all.js
 
-const OVERPASS_ENDPOINT = 'https://overpass.kumi.systems/api/interpreter';
+const OVERPASS_ENDPOINT = 'https://overpass.private.coffee/api/interpreter';
 
 exports.handler = async (event, context) => {
     if (event.httpMethod !== 'POST' || !event.body) {
