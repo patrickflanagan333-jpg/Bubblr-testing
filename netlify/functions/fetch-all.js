@@ -25,8 +25,11 @@ exports.handler = async (event, context) => {
     try {
         const response = await fetch(OVERPASS_ENDPOINT, {
             method: 'POST',
-            headers: { 'User-Agent': 'BubblrApp/1.0 (https://bubblrapp.com)' },
-            body: query
+            headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'BubblrApp/1.0 (hello@bubblrapp.com)' 
+            },
+            body: `data=${encodeURIComponent(query)}`
         });
 
         if (!response.ok) {
