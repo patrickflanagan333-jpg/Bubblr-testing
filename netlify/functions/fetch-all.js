@@ -1,7 +1,7 @@
 // netlify/functions/fetch-all.js
 
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
-const UPSTREAM_TIMEOUT_MS = 8500;
+const UPSTREAM_TIMEOUT_MS = 11000;
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ exports.handler = async (event) => {
   }
 
   const query = `
-    [out:json][timeout:8];
+    [out:json][timeout:10];
     node[amenity=drinking_water](${minLat},${minLon},${maxLat},${maxLon});
     out body;
   `;
