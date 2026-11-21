@@ -149,6 +149,7 @@
 
         let userMarker = null, csvLayer = null, communityLayer = null, lastUserLatLng = null;
         let hasInitiallySyncedNearest = false, currentNearestLatLng = null;
+        let fetchDebounceTimer = null;
         
         const savedStats = JSON.parse(localStorage.getItem('bubblr_stats'));
         let stats = savedStats || { 
@@ -249,31 +250,70 @@
             return line.split(re).map(v => v.replace(/^"|"$/g, '').trim());
         }
 
+        function scheduleCommunityFountainsFetch(bounds) {
+            if (!window.bubblrMap || window.bubblrMap.getZoom() < 14) return;
+            clearTimeout(fetchDebounceTimer);
+            fetchDebounceTimer = setTimeout(() => {
+                fetchCommunityFountains(bounds);
+            }, 500);
+        }
+
         async function fetchCommunityFountains(bounds) {
-            if (window.bubblrMap && window.bubblrMap.getZoom() < 14) return;
+            if (!bounds || (window.bubblrMap && window.bubblrMap.getZoom() < 14)) return;
 
             try {
                 const res = await fetch('/.netlify/functions/fetch-all', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ minLat: bounds.getSouth(), minLon: bounds.getWest(), maxLat: bounds.getNorth(), maxLon: bounds.getEast() })
-                });
-                const data = await res.json();
-                
-                // Create the NEW layer first
-                const newCommunityLayer = L.geoJSON(data.elements.map(el => ({"type":"Feature","geometry":{"type":"Point","coordinates":[el.lon, el.lat]},"properties":{"name":el.tags.name||"Public Fountain"}})), {
-                    pointToLayer: (f, l) => L.marker(l, { icon: bubblrIcon }).bindPopup(`<b>${f.properties.name}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`)
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        minLat: bounds.getSouth(),
+                        minLon: bounds.getWest(),
+                        maxLat: bounds.getNorth(),
+                        maxLon: bounds.getEast()
+                    })
                 });
 
-                // Remove the old layer only AFTER the new data is ready to be shown
-                if (communityLayer) {
+                const rawText = await res.text();
+                let data = null;
+                try {
+                    data = rawText ? JSON.parse(rawText) : null;
+                } catch {
+                    throw new Error(`Invalid JSON (${res.status})`);
+                }
+
+                if (!res.ok) {
+                    if (res.status === 504) {
+                        displayMessage("Map fountain lookup timed out — showing saved pins.", 2500);
+                    }
+                    return;
+                }
+
+                const elements = Array.isArray(data?.elements) ? data.elements : [];
+                const features = elements
+                    .filter(el => typeof el?.lat === 'number' && typeof el?.lon === 'number')
+                    .map(el => ({
+                        type: "Feature",
+                        geometry: { type: "Point", coordinates: [el.lon, el.lat] },
+                        properties: { name: el.tags?.name || "Public Fountain" }
+                    }));
+
+                const newCommunityLayer = L.geoJSON(features, {
+                    pointToLayer: (f, l) => L.marker(l, { icon: bubblrIcon }).bindPopup(
+                        `<b>${f.properties.name}</b><br><button onclick="checkIn()" class="bg-teal-500 text-white p-2 rounded w-full font-bold mt-2">I Refilled Here</button>`
+                    )
+                });
+
+                if (communityLayer && window.bubblrMap) {
                     window.bubblrMap.removeLayer(communityLayer);
                 }
-                
+
                 communityLayer = newCommunityLayer.addTo(window.bubblrMap);
                 
                 updateCount(); 
                 if (lastUserLatLng) findNearest(lastUserLatLng);
-            } catch (e) { console.error("Community fetch error", e); }
+            } catch (e) {
+                console.warn("Community fetch error:", e);
+            }
         }
 
         function updateCount() {
@@ -324,7 +364,7 @@
                 if (lastUserLatLng) findNearest(lastUserLatLng);
             });
 
-            map.on('moveend', () => fetchCommunityFountains(map.getBounds()));
+            map.on('moveend', () => scheduleCommunityFountainsFetch(map.getBounds()));
             setTimeout(() => { if(window.bubblrMap) window.bubblrMap.invalidateSize(); }, 200);
         }
 
